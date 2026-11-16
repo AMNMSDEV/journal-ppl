@@ -1,5 +1,5 @@
 // Service worker : ouverture hors ligne. Changer VERSION force la mise à jour des fichiers en cache.
-var VERSION = "journal-ppl-v1";
+var VERSION = "journal-ppl-v2";
 var CORE = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", function (e) {
