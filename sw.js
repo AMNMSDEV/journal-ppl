@@ -1,9 +1,9 @@
 // Service worker : ouverture hors ligne. Changer VERSION force la mise à jour des fichiers en cache.
-var VERSION = "journal-ppl-v3";
+var VERSION = "journal-ppl-v4";
 var CORE = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", function (e) {
-  e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(CORE); }).then(function () { return self.skipWaiting(); }));
+  e.waitUntil(caches.open(VERSION).then(function (c) { return Promise.all(CORE.map(function (u) { return fetch(new Request(u, { cache: "reload" })).then(function (r) { return c.put(u, r); }); })); }).then(function () { return self.skipWaiting(); }));
 });
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (ks) {
@@ -17,6 +17,14 @@ self.addEventListener("fetch", function (e) {
   var url = new URL(req.url);
   var ok = url.origin === location.origin || url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com";
   if (!ok) return;
+  if (req.mode === "navigate") {
+    e.respondWith(fetch(req).then(function (res) {
+      var copy = res.clone();
+      caches.open(VERSION).then(function (c) { c.put("./index.html", copy); });
+      return res;
+    }).catch(function () { return caches.match("./index.html"); }));
+    return;
+  }
   e.respondWith(caches.open(VERSION).then(function (c) {
     return c.match(req, { ignoreSearch: false }).then(function (hit) {
       var net = fetch(req).then(function (res) {
