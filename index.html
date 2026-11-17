@@ -177,6 +177,17 @@ main { display: grid; gap: 12px; padding-top: 16px; }
 .fld i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted); pointer-events: none; }
 .btn.more { justify-self: start; }
 
+/* Salles */
+.grow { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.grow .gn { font-weight: 600; flex: 1; min-width: 0; }
+.gadd { display: flex; gap: 8px; }
+.gadd input { flex: 1; min-width: 0; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 16px; }
+.gymrow { display: flex; align-items: center; gap: 10px; }
+.gymrow label { font-size: 13px; color: var(--muted); flex: none; }
+.gymrow select { flex: 1; min-width: 0; min-height: 44px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 16px; }
+.seg.wrapseg { flex-wrap: wrap; }
+.seg.wrapseg button { flex: 1 1 40%; }
+
 /* Suggestion de charge */
 .sg { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--field); }
 .sg.up { border-color: var(--ok); background: var(--ok-soft); }
@@ -253,6 +264,12 @@ main { display: grid; gap: 12px; padding-top: 16px; }
       <div class="sug" id="sug"></div>
       <h2 class="sec">Mes séances</h2>
       <div class="hist" id="hist"></div>
+      <h2 class="sec">Mes salles</h2>
+      <div class="hist" id="gyms"></div>
+      <div class="gadd">
+        <input type="text" id="g-name" placeholder="Ajouter une salle" autocomplete="off" aria-label="Nom de la nouvelle salle">
+        <button type="button" class="btn" id="g-add">Ajouter</button>
+      </div>
       <section class="backup" aria-label="Sauvegarde des données">
         <h2>Sauvegarde</h2>
         <p>Tes séances sont stockées sur ce téléphone. Exporte-les de temps en temps : si tu changes de téléphone ou effaces les données de Safari, tu pourras les remettre avec Importer.</p>
@@ -263,7 +280,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
         </div>
         <textarea id="b-text" placeholder="Pour importer : colle ici la sauvegarde copiée, puis appuie sur Importer." spellcheck="false"></textarea>
         <div class="msg" id="b-msg" role="status"></div>
-        <p>Version de l'application : 8 (suggestion de charge)</p>
+        <p>Version de l'application : 9 (salles)</p>
       </section>
     </section>
 
@@ -284,6 +301,10 @@ main { display: grid; gap: 12px; padding-top: 16px; }
         </div>
       </div>
       <div>
+        <span class="lb">Salle</span>
+        <div class="seg sub wrapseg" id="n-gym" role="tablist" aria-label="Salle"></div>
+      </div>
+      <div>
         <label class="lb" for="n-date">Date</label>
         <input type="date" id="n-date">
       </div>
@@ -294,6 +315,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
 
     <section id="v-sess" style="display:grid;gap:12px" hidden>
       <div class="hint" id="hint"></div>
+      <div class="gymrow"><label for="s-gym">Salle</label><select id="s-gym"></select></div>
       <p class="warm" id="warm"></p>
       <div class="mapbar" id="mapbar" aria-label="Muscles de la séance"></div>
       <div class="exlist" id="ex"></div>
@@ -342,7 +364,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   }
 
   // État
-  var state = { date: todayStr(), day: "push", variant: "A", logs: {}, sheet: {}, sel: {}, sheetVer: 0, timer: null, view: "home" };
+  var state = { date: todayStr(), day: "push", variant: "A", logs: {}, sheet: {}, sel: {}, sheetVer: 0, timer: null, view: "home", gym: "keepcool" };
   var openPick = null, showAll = {};
 
   function pad(n) { return (n < 10 ? "0" : "") + n; }
@@ -362,6 +384,27 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     return { day: DAYS[pos], variant: cycle % 2 === 0 ? "A" : "B", cycle: cycle + 1 };
   }
   function suggestText(sg) { if (!sg) return ""; return sg.rest ? "repos" : PROGRAM[sg.day].label + " " + sg.variant; }
+
+  // Salles : les machines et poulies ne sont pas calibrées pareil d'une salle à l'autre
+  var GKEY = "journal-ppl-gyms";
+  var gyms = (function () {
+    try { var o = JSON.parse(localStorage.getItem(GKEY) || "null"); if (o && o.list && o.list.length) return o; } catch (e) {}
+    return { list: [{ id: "keepcool", name: "Keep Cool" }, { id: "neoness", name: "Neoness" }], def: "keepcool" };
+  })();
+  var SCOPED = { "Machine": 1, "Poulie": 1, "Smith": 1 };
+  function gymsSave() { try { localStorage.setItem(GKEY, JSON.stringify(gyms)); } catch (e) {} }
+  function gymName(id) { for (var i = 0; i < gyms.list.length; i++) if (gyms.list[i].id === id) return gyms.list[i].name; return id; }
+  function gymOf(doc) { return (doc && doc.gym) || "keepcool"; }
+  function hasGym(id) { return gyms.list.some(function (g) { return g.id === id; }); }
+  function addGym(name) {
+    name = (name || "").trim();
+    if (!name) return null;
+    var base = name.toLowerCase().replace(/[^a-z0-9]+/g, "") || "salle", id = base, n = 2;
+    while (hasGym(id)) { id = base + n; n++; }
+    gyms.list.push({ id: id, name: name });
+    gymsSave();
+    return id;
+  }
 
   // Anciennes sauvegardes : les poids étaient rangés par place dans la séance, ils le sont désormais par exercice
   var LEGACY = {};
@@ -420,7 +463,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     });
     Object.keys(state.sel).forEach(function (k) { if (state.sel[k]) { sel[k] = state.sel[k]; hasSel = true; } });
     if (!any && !hasSel && !state.timer) return null;
-    var doc = { date: state.date, data: data, sel: sel, last: { day: state.day, variant: state.variant }, updatedAt: Date.now() };
+    var doc = { date: state.date, data: data, sel: sel, gym: state.gym, last: { day: state.day, variant: state.variant }, updatedAt: Date.now() };
     if (state.timer) doc.t = { start: state.timer.start, end: state.timer.end };
     return doc;
   }
@@ -449,7 +492,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   // Vues : accueil, nouvelle séance, séance
   var elEx = document.getElementById("ex");
   var VIEWS = ["home", "new", "sess"];
-  var nsel = { day: "push", variant: "A" };
+  var nsel = { day: "push", variant: "A", gym: gyms.def };
   function showView(v) {
     state.view = v;
     VIEWS.forEach(function (n) { document.getElementById("v-" + n).hidden = n !== v; });
@@ -477,7 +520,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
       t.textContent = "Prévu aujourd'hui : " + PROGRAM[sg.day].label + " " + sg.variant + " (cycle " + sg.cycle + ")";
       var go = document.createElement("button"); go.type = "button"; go.className = "btn";
       go.textContent = (again ? "Reprendre " : "Commencer ") + PROGRAM[sg.day].label + " " + sg.variant;
-      go.addEventListener("click", function () { openSession(today, sg.day, sg.variant, true); });
+      go.addEventListener("click", function () { openSession(today, sg.day, sg.variant, true, gyms.def); });
       box.appendChild(t); box.appendChild(go);
     }
     var hist = document.getElementById("hist");
@@ -496,7 +539,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
       var l = document.createElement("span"); l.className = "l";
       var a = document.createElement("span"); a.className = "a"; a.textContent = longLabel(d);
       var lab = doc.last && PROGRAM[doc.last.day] ? PROGRAM[doc.last.day].label + " " + doc.last.variant : "Séance";
-      var bb = document.createElement("span"); bb.className = "b"; bb.textContent = lab;
+      var bb = document.createElement("span"); bb.className = "b"; bb.textContent = lab + " · " + gymName(gymOf(doc));
       l.appendChild(a); l.appendChild(bb);
       var n = exCount(doc);
       var r = document.createElement("span"); r.className = "r";
@@ -512,21 +555,58 @@ main { display: grid; gap: 12px; padding-top: 16px; }
       hist.appendChild(b);
     });
   }
+  function renderGyms() {
+    var box = document.getElementById("gyms");
+    box.textContent = "";
+    gyms.list.forEach(function (g) {
+      var row = document.createElement("div"); row.className = "grow";
+      var nm = document.createElement("span"); nm.className = "gn"; nm.textContent = g.name;
+      row.appendChild(nm);
+      if (g.id === gyms.def) {
+        var pl = document.createElement("span"); pl.className = "done-pill"; pl.textContent = "Par défaut"; row.appendChild(pl);
+      } else {
+        var b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = "Mettre par défaut";
+        b.addEventListener("click", function () { gyms.def = g.id; gymsSave(); renderGyms(); });
+        row.appendChild(b);
+      }
+      box.appendChild(row);
+    });
+  }
+  function renderNewGym() {
+    var box = document.getElementById("n-gym");
+    box.textContent = "";
+    gyms.list.forEach(function (g) {
+      var b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("data-gym", g.id);
+      b.setAttribute("aria-selected", g.id === nsel.gym ? "true" : "false"); b.textContent = g.name;
+      box.appendChild(b);
+    });
+  }
+  function renderSessGym() {
+    var sel = document.getElementById("s-gym");
+    sel.textContent = "";
+    var list = gyms.list.slice();
+    if (!hasGym(state.gym)) list.push({ id: state.gym, name: state.gym });
+    list.forEach(function (g) {
+      var o = document.createElement("option"); o.value = g.id; o.textContent = g.name; sel.appendChild(o);
+    });
+    sel.value = state.gym;
+  }
   function renderNew() {
+    renderNewGym();
     var days = document.querySelectorAll("#n-day button");
     for (var i = 0; i < days.length; i++) days[i].setAttribute("aria-selected", days[i].getAttribute("data-day") === nsel.day ? "true" : "false");
     var vs = document.querySelectorAll("#n-var button");
     for (var j = 0; j < vs.length; j++) vs[j].setAttribute("aria-selected", vs[j].getAttribute("data-var") === nsel.variant ? "true" : "false");
     var sg = suggest(document.getElementById("n-date").value || todayStr());
     var sum = document.getElementById("n-sum");
-    sum.textContent = PROGRAM[nsel.day].label + " " + nsel.variant + " : " + PROGRAM[nsel.day][nsel.variant].slots.length + " muscles.";
+    sum.textContent = gymName(nsel.gym) + " · " + PROGRAM[nsel.day].label + " " + nsel.variant + " : " + PROGRAM[nsel.day][nsel.variant].slots.length + " muscles.";
     if (sg && !sg.rest && (sg.day !== nsel.day || sg.variant !== nsel.variant)) sum.textContent += " Le cycle prévoit " + PROGRAM[sg.day].label + " " + sg.variant + " ce jour-là.";
   }
   function openNew() {
     var sg = suggest(todayStr());
     if (sg && !sg.rest) { nsel.day = sg.day; nsel.variant = sg.variant; }
     document.getElementById("n-date").value = todayStr();
-    renderNew(); showView("new");
+    nsel.gym = gyms.def; renderNew(); showView("new");
   }
   function renderHint() {
     var h = document.getElementById("hint");
@@ -549,12 +629,14 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     row.classList.toggle("run", run);
   }
   function startTimer() { state.timer = { start: Date.now(), end: null }; queueWrite(state.date, buildDoc()); }
-  function openSession(date, day, variant, fresh) {
+  function openSession(date, day, variant, fresh, gym) {
     flushNow();
     state.date = date; state.day = day; state.variant = variant; openPick = null; showAll = {};
+    var d0 = state.logs[date];
+    state.gym = gym || (d0 ? gymOf(d0) : gyms.def);
     loadSheet();
     if (fresh && !state.timer && date === todayStr()) startTimer();
-    renderHint(); renderExercises(); showView("sess"); renderChrono();
+    renderHint(); renderSessGym(); renderExercises(); showView("sess"); renderChrono();
     document.getElementById("s-end").textContent = state.timer && !state.timer.end ? "Terminer la séance" : "Retour à l'accueil";
   }
   function goHome() { flushNow(); openPick = null; renderHome(); showView("home"); renderChrono(); }
@@ -579,14 +661,26 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   setInterval(function () { if (state.view === "sess" && state.timer && !state.timer.end) renderChrono(); }, 250);
 
   // Historique par exercice
+  function dateLine(id, d) {
+    var parts = state.logs[d].data[id].filter(function (s) { return s.kg !== null || s.reps !== null; }).map(function (s) {
+      return (s.kg !== null ? fmtNum(s.kg) + " kg" : "") + (s.reps !== null ? (s.kg !== null ? " x " : "") + s.reps : "");
+    });
+    return parts.length ? chipLabel(d) + " · " + gymName(gymOf(state.logs[d])) + " : " + parts.join(" · ") : "";
+  }
   function prevFor(id) {
+    var scoped = !!SCOPED[LIB[id].equip];
     var dates = Object.keys(state.logs).filter(function (d) { return d < state.date && state.logs[d].data && state.logs[d].data[id]; }).sort().reverse();
-    for (var i = 0; i < dates.length; i++) {
-      var d = dates[i];
-      var parts = state.logs[d].data[id].filter(function (s) { return s.kg !== null || s.reps !== null; }).map(function (s) {
-        return (s.kg !== null ? fmtNum(s.kg) + " kg" : "") + (s.reps !== null ? (s.kg !== null ? " x " : "") + s.reps : "");
-      });
-      if (parts.length) return "Dernière fois, " + chipLabel(d) + " : " + parts.join(" · ");
+    var i, line;
+    for (i = 0; i < dates.length; i++) {
+      if (scoped && gymOf(state.logs[dates[i]]) !== state.gym) continue;
+      line = dateLine(id, dates[i]);
+      if (line) return "Dernière fois, " + line;
+    }
+    if (scoped) {
+      for (i = 0; i < dates.length; i++) {
+        line = dateLine(id, dates[i]);
+        if (line) return "Pas encore fait chez " + gymName(state.gym) + " (les machines varient d'une salle à l'autre). Ailleurs, " + line;
+      }
     }
     return "";
   }
@@ -611,13 +705,15 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     return 2.5;
   }
   function lastLog(id) {
+    var scoped = !!SCOPED[LIB[id].equip];
     var dates = Object.keys(state.logs).filter(function (d) {
       var a = state.logs[d] && state.logs[d].data && state.logs[d].data[id];
+      if (scoped && gymOf(state.logs[d]) !== state.gym) return false;
       return d < state.date && a && a.some(function (s) { return s.kg !== null || s.reps !== null; });
     }).sort().reverse();
     return dates.length ? { date: dates[0], sets: state.logs[dates[0]].data[id].filter(function (s) { return s.kg !== null && s.reps !== null; }) } : null;
   }
-  function suggestFor(id, slot) {
+    function suggestFor(id, slot) {
     var last = lastLog(id);
     if (!last || !last.sets.length) return null;
     var rg = parseRange(slot.scheme), step = stepFor(id);
@@ -875,10 +971,21 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     if (b) { nsel.variant = b.getAttribute("data-var"); renderNew(); }
   });
   document.getElementById("n-date").addEventListener("change", renderNew);
+  document.getElementById("n-gym").addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("button[data-gym]") : null;
+    if (b) { nsel.gym = b.getAttribute("data-gym"); renderNew(); }
+  });
+  document.getElementById("s-gym").addEventListener("change", function () {
+    state.gym = this.value; scheduleSave(); renderExercises();
+  });
+  document.getElementById("g-add").addEventListener("click", function () {
+    var inp = document.getElementById("g-name");
+    if (addGym(inp.value)) { inp.value = ""; renderGyms(); }
+  });
   document.getElementById("n-go").addEventListener("click", function () {
     var d = document.getElementById("n-date").value;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) d = todayStr();
-    openSession(d, nsel.day, nsel.variant, true);
+    openSession(d, nsel.day, nsel.variant, true, nsel.gym);
   });
   document.getElementById("mapbar").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest("button[data-slot]") : null;
@@ -893,7 +1000,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   function msg(t, bad) { var m = document.getElementById("b-msg"); m.textContent = t; m.classList.toggle("bad", !!bad); }
   function exportText() {
     flushNow();
-    return JSON.stringify({ app: "journal-ppl", version: 2, exportedAt: new Date().toISOString(), logs: state.logs }, null, 1);
+    return JSON.stringify({ app: "journal-ppl", version: 3, exportedAt: new Date().toISOString(), gyms: gyms, logs: state.logs }, null, 1);
   }
   document.getElementById("b-copy").addEventListener("click", function () {
     var t = exportText();
@@ -920,6 +1027,10 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     try { obj = JSON.parse(raw); } catch (e) { msg("Texte illisible : la sauvegarde est incomplète.", true); return; }
     if (!obj || obj.app !== "journal-ppl" || !obj.logs || typeof obj.logs !== "object") { msg("Ce n'est pas une sauvegarde du journal.", true); return; }
     flushNow();
+    if (obj.gyms && obj.gyms.list) {
+      obj.gyms.list.forEach(function (g) { if (g && g.id && g.name && !hasGym(g.id)) gyms.list.push({ id: String(g.id), name: String(g.name) }); });
+      gymsSave();
+    }
     var n = 0;
     Object.keys(obj.logs).forEach(function (d) {
       var inc = migrate(obj.logs[d]);
@@ -938,6 +1049,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     state.logs = migrateAll(lsRead());
     setStatus("Sur ce téléphone");
     state.view = "home";
+    renderGyms();
     renderHome();
     showView("home");
   })();
