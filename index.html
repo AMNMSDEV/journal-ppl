@@ -20,7 +20,6 @@
 html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 body { margin: 0; }
 [hidden] { display: none !important; }
-/* Layout: sticky date strip on top, then Push/Pull/Legs toggle, then A/B toggle, then one card per exercise with set rows (kg, reps) */
 :root {
   --bg: #f1f3f7;
   --surface: #ffffff;
@@ -34,39 +33,27 @@ body { margin: 0; }
   --ok: #13795b;
   --ok-soft: #d9f0e8;
   --warn: #a8480a;
+  --body: #cfd6e4;
+  --push: #d9531e;
+  --pull: #2750d8;
+  --legs: #13795b;
   --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0d1220;
-    --surface: #151c2d;
-    --fg: #e8edf7;
-    --muted: #97a3ba;
-    --line: #26314a;
-    --field: #0f1626;
-    --accent: #7fa1ff;
-    --accent-ink: #0d1220;
-    --accent-soft: #1b2a55;
-    --ok: #52d1a4;
-    --ok-soft: #12332a;
-    --warn: #f2a54f;
+    --bg: #0d1220; --surface: #151c2d; --fg: #e8edf7; --muted: #97a3ba; --line: #26314a;
+    --field: #0f1626; --accent: #7fa1ff; --accent-ink: #0d1220; --accent-soft: #1b2a55;
+    --ok: #52d1a4; --ok-soft: #12332a; --warn: #f2a54f;
+    --body: #2c3858; --push: #ff8a5c; --pull: #7fa1ff; --legs: #52d1a4;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0d1220;
-  --surface: #151c2d;
-  --fg: #e8edf7;
-  --muted: #97a3ba;
-  --line: #26314a;
-  --field: #0f1626;
-  --accent: #7fa1ff;
-  --accent-ink: #0d1220;
-  --accent-soft: #1b2a55;
-  --ok: #52d1a4;
-  --ok-soft: #12332a;
-  --warn: #f2a54f;
+  --bg: #0d1220; --surface: #151c2d; --fg: #e8edf7; --muted: #97a3ba; --line: #26314a;
+  --field: #0f1626; --accent: #7fa1ff; --accent-ink: #0d1220; --accent-soft: #1b2a55;
+  --ok: #52d1a4; --ok-soft: #12332a; --warn: #f2a54f;
+  --body: #2c3858; --push: #ff8a5c; --pull: #7fa1ff; --legs: #52d1a4;
   color-scheme: dark;
 }
 
@@ -81,23 +68,13 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 0 56px;
 }
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0 0 auto;
-  height: env(safe-area-inset-top, 0px);
-  z-index: 10;
-  background: var(--surface);
-}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
 .wrap { max-width: 640px; margin: 0 auto; }
 
 /* Bandeau des dates */
 .top {
-  position: sticky;
-  top: env(safe-area-inset-top, 0px);
-  z-index: 9;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9;
+  background: var(--surface); border-bottom: 1px solid var(--line);
   margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
   padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
 }
@@ -120,50 +97,64 @@ h1 { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin
 .chip.sel .s { color: var(--accent-ink); opacity: 0.85; }
 .chip.logged .s { color: var(--ok); font-weight: 600; }
 .chip.sel.logged .s { color: var(--accent-ink); }
-.chip.add { align-content: center; border-style: dashed; }
+.chip.add { border-style: dashed; }
 .pickrow { display: flex; align-items: center; gap: 10px; }
 .pickrow label { font-size: 13px; color: var(--muted); flex: none; }
 .pickrow input { flex: 1; min-width: 0; min-height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 16px; }
-.chip:focus-visible, .seg button:focus-visible, .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.chip:focus-visible, .seg button:focus-visible, .btn:focus-visible, .opt:focus-visible, .mp:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 /* Bascules */
 main { display: grid; gap: 12px; padding-top: 16px; }
 .hint { font-size: 13px; color: var(--muted); }
 .hint b { color: var(--fg); font-weight: 600; }
 .seg { display: flex; gap: 4px; padding: 4px; background: var(--field); border: 1px solid var(--line); border-radius: 14px; }
-.seg button {
-  flex: 1; min-width: 0; min-height: 46px; border: 0; border-radius: 10px; background: transparent;
-  color: var(--muted); font-family: var(--font-display); font-weight: 600; font-size: 16px; cursor: pointer;
-}
+.seg button { flex: 1; min-width: 0; min-height: 46px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-family: var(--font-display); font-weight: 600; font-size: 16px; cursor: pointer; }
 .seg button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
 .seg.sub button { min-height: 40px; font-size: 15px; }
 .seg.sub button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
 .warm { margin: 0; font-size: 13px; color: var(--muted); }
 
-/* Exercices */
+/* Silhouettes */
+.mi { display: block; height: 100%; width: auto; }
+.mi .bd { fill: var(--body); }
+.mi .hl { fill: var(--hl, var(--accent)); }
+.f-push { --hl: var(--push); }
+.f-pull { --hl: var(--pull); }
+.f-legs { --hl: var(--legs); }
+
+/* Bandeau visuel de la séance */
+.mapbar { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 6px; scrollbar-width: none; }
+.mapbar::-webkit-scrollbar { display: none; }
+.mp { flex: none; position: relative; width: 46px; height: 74px; padding: 6px 7px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.mp .mi { margin: 0 auto; }
+.mp.done { background: var(--ok-soft); border-color: var(--ok); }
+.mp.done::after { content: "\2713"; position: absolute; right: 3px; bottom: 1px; font-size: 13px; font-weight: 700; color: var(--ok); }
+.mp .mn { position: absolute; left: 4px; top: 1px; font-size: 10px; font-weight: 700; color: var(--muted); }
+
+/* Blocs muscle */
 .exlist { display: grid; gap: 12px; }
-.ex { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 10px; }
-.ex-head { display: flex; gap: 10px; align-items: flex-start; }
-.tag { flex: none; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 8px; background: var(--field); border: 1px solid var(--line); display: grid; place-content: center; font-family: var(--font-display); font-weight: 700; font-size: 13px; }
-.ex-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; line-height: 1.25; min-width: 0; }
+.blk { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--hl); border-radius: 14px; padding: 14px; display: grid; gap: 10px; scroll-margin-top: 150px; }
+.bk-head { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; }
+.ic { width: 44px; height: 84px; border-radius: 12px; background: var(--field); border: 1px solid var(--line); padding: 5px 6px; }
+.mg { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--hl); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ex-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; line-height: 1.25; min-width: 0; margin-top: 2px; }
 .ex-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
-.done-pill { margin-left: auto; flex: none; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); }
-.ref { font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
-.ref span b { font-weight: 600; }
-.prev { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.sets { display: grid; gap: 8px; }
-.srow { display: grid; grid-template-columns: 54px 1fr 1fr; gap: 8px; align-items: center; }
-.srow .sl { font-size: 12px; color: var(--muted); }
-.fld { position: relative; }
-.fld input {
-  width: 100%; min-height: 48px; padding: 0 38px 0 12px; border-radius: 10px;
-  border: 1px solid var(--line); background: var(--field); color: var(--fg);
-  font: inherit; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums;
-}
-.fld input::placeholder { color: var(--muted); opacity: 0.55; font-weight: 400; }
-.fld input:focus { outline: 3px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
-.fld i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted); pointer-events: none; }
-.btn { justify-self: start; font: inherit; font-size: 13px; font-weight: 600; color: var(--accent); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-height: 40px; cursor: pointer; }
+.done-pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); letter-spacing: 0; text-transform: none; }
+.swapped { font-size: 12px; color: var(--warn); margin-top: 2px; }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.btn { font: inherit; font-size: 13px; font-weight: 600; color: var(--accent); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-height: 40px; cursor: pointer; }
+.btn.on { background: var(--accent-soft); border-color: var(--accent); }
+
+/* Sélecteur d'exercice */
+.pick { display: grid; gap: 6px; border: 1px solid var(--line); border-radius: 12px; padding: 8px; background: var(--field); }
+.pick h3 { margin: 0 0 2px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.opt { display: flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.opt .on1 { min-width: 0; display: grid; }
+.opt .nm { font-weight: 600; font-size: 14px; }
+.opt .sm { font-size: 12px; color: var(--muted); }
+.opt .eq { flex: none; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--field); border: 1px solid var(--line); color: var(--muted); }
+.opt.cur { border-color: var(--accent); background: var(--accent-soft); }
+.opt[disabled] { opacity: 0.5; cursor: default; }
 
 .tech { border-top: 1px solid var(--line); padding-top: 4px; }
 .tech summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; font-size: 13px; font-weight: 600; color: var(--accent); list-style: none; }
@@ -174,21 +165,29 @@ main { display: grid; gap: 12px; padding-top: 16px; }
 .tech .tb p { margin: 0; }
 .tech .tb b { display: block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
 .tech .tb .er b { color: var(--warn); }
-
-@media (max-width: 420px) {
-  .srow { grid-template-columns: 44px 1fr 1fr; }
-}
+.ref { font-size: 13px; }
+.prev { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sets { display: grid; gap: 8px; }
+.srow { display: grid; grid-template-columns: 54px 1fr 1fr; gap: 8px; align-items: center; }
+.srow .sl { font-size: 12px; color: var(--muted); }
+.fld { position: relative; }
+.fld input { width: 100%; min-height: 48px; padding: 0 38px 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fld input::placeholder { color: var(--muted); opacity: 0.55; font-weight: 400; }
+.fld input:focus { outline: 3px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.fld i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted); pointer-events: none; }
+.btn.more { justify-self: start; }
 
 /* Sauvegarde */
 .backup { margin-top: 28px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); display: grid; gap: 10px; }
 .backup h2 { font-family: var(--font-display); font-size: 16px; margin: 0; }
 .backup p { margin: 0; font-size: 13px; color: var(--muted); }
-.backup .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.backup .bacts { display: flex; flex-wrap: wrap; gap: 8px; }
 .backup textarea { width: 100%; min-height: 110px; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: 12px/1.4 ui-monospace, Menlo, monospace; }
 .backup .msg { font-size: 13px; color: var(--ok); min-height: 1.3em; }
 .backup .msg.bad { color: var(--warn); }
-</style>
 
+@media (max-width: 420px) { .srow { grid-template-columns: 44px 1fr 1fr; } }
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -218,106 +217,72 @@ main { display: grid; gap: 12px; padding-top: 16px; }
       <button type="button" role="tab" data-var="B">B</button>
     </div>
     <p class="warm" id="warm"></p>
+    <div class="mapbar" id="mapbar" aria-label="Muscles de la séance"></div>
     <div class="exlist" id="ex"></div>
     <section class="backup" aria-label="Sauvegarde des données">
       <h2>Sauvegarde</h2>
       <p>Tes séances sont stockées sur ce téléphone. Exporte-les de temps en temps : si tu changes de téléphone ou effaces les données de Safari, tu pourras les remettre avec Importer.</p>
-      <div class="acts">
+      <div class="bacts">
         <button type="button" class="btn" id="b-copy">Copier la sauvegarde</button>
         <button type="button" class="btn" id="b-share">Partager le fichier</button>
         <button type="button" class="btn" id="b-imp">Importer</button>
       </div>
       <textarea id="b-text" placeholder="Pour importer : colle ici la sauvegarde copiée, puis appuie sur Importer." spellcheck="false"></textarea>
       <div class="msg" id="b-msg" role="status"></div>
-      <p>Version de l'application : 4 (choix de date visible)</p>
+      <p>Version de l'application : 5 (séances par muscle)</p>
     </section>
   </main>
 </div>
 
 <script>
 (function () {
-  // Programme : charge de reprise (plan), référence de l'été (ref), séries x répétitions
-  function X(tag, name, role, scheme, rest, ref, plan, rp) {
-    return { tag: tag, name: name, role: role, scheme: scheme, rest: rest, ref: ref, plan: plan, rp: rp, sets: 3 };
-  }
-  var PROGRAM = {
-    push: {
-      label: "Push",
-      A: { warm: "Échauffement, 5 min : barre seule x 12, puis 35 kg x 6.", ex: [
-        X("1", "Développé couché barre", "milieu des pectoraux, lourd", "3 x 8", "1 min 30", "Reprise 50 kg, été 55 kg", 50, "8"),
-        X("2", "Développé couché incliné haltères", "haut des pectoraux", "3 x 10 à 12", "1 min 15", "Reprise 20 kg par haltère, été 20 à 25 kg", 20, "12"),
-        X("3", "Développé militaire haltères", "avant des épaules", "3 x 10", "1 min 15", "Reprise 18 kg par haltère, été 20 kg", 18, "10"),
-        X("4a", "Écartés poulie", "bas et étirement des pectoraux", "3 x 12", "aucun", "Reprise 25 kg, été 30 kg", 25, "12"),
-        X("4b", "Élévations latérales", "côté des épaules, la largeur", "3 x 12 à 15", "1 min après la paire", "Nouveau : 8 kg par haltère à tester", 8, "15"),
-        X("5", "Extension triceps au-dessus de la tête (câble)", "longue portion du triceps", "3 x 12", "45 s", "Reprise 15 kg, été 15 à 20 kg", 15, "12"),
-        X("6", "Extension triceps corde", "portion latérale du triceps", "3 x 12", "45 s", "Reprise 25 kg, été 25 à 30 kg", 25, "12")
-      ] },
-      B: { warm: "Échauffement, 5 min : 1 à 2 séries légères sur le premier exercice. Charges à trouver et à noter.", ex: [
-        X("1", "Développé incliné haltères, lourd", "haut des pectoraux", "3 x 8 à 10", "1 min 30", "", null, "10"),
-        X("2", "Développé couché machine ou haltères", "milieu des pectoraux", "3 x 10 à 12", "1 min 15", "", null, "12"),
-        X("3", "Développé épaules à la machine", "avant des épaules", "3 x 10 à 12", "1 min 15", "", null, "12"),
-        X("4", "Élévations latérales à la poulie", "côté des épaules", "3 x 12 à 15", "1 min", "", null, "15"),
-        X("5", "Dips au poids du corps", "bas des pectoraux et triceps", "3 x 8 à 12", "1 min 15", "", null, "10"),
-        X("6", "Extension triceps barre à la poulie", "ensemble du triceps", "3 x 10 à 12", "45 s", "", null, "12")
-      ] }
-    },
-    pull: {
-      label: "Pull",
-      A: { warm: "Échauffement, 5 min : tirage poitrine 20 kg x 12, puis rowing poulie 30 kg x 10.", ex: [
-        X("1", "Tirage poitrine à la poulie", "largeur du dos, tirage vertical", "3 x 10 à 12", "1 min 30", "Reprise 32,5 kg, été 35 à 40 kg", 32.5, "12"),
-        X("2", "Rowing poulie assis", "épaisseur du dos, tirage horizontal", "3 x 10 à 12", "1 min 30", "Reprise 45 kg, été 50 kg", 45, "12"),
-        X("3", "Rowing haltères incliné sur poitrine", "haut du dos, autre angle", "3 x 12", "1 min 15", "Reprise 15 kg par haltère, été 15 à 20 kg", 15, "12"),
-        X("4", "Tirage vers visage", "arrière des épaules, haut du dos", "3 x 15", "1 min", "Reprise 15 kg, été 15 à 25 kg", 15, "15"),
-        X("5a", "Curl incliné assis", "biceps, longue portion en étirement", "3 x 10 à 12", "aucun", "Reprise 12 kg par haltère, été 15 kg", 12, "12"),
-        X("5b", "Curl marteau", "brachial et avant-bras", "3 x 10 à 12", "1 min après la paire", "Reprise 12 kg par haltère, été 15 kg", 12, "12")
-      ] },
-      B: { warm: "Échauffement, 5 min : 1 à 2 séries légères sur le premier exercice. Charges à trouver et à noter.", ex: [
-        X("1", "Tractions, assistées si besoin", "largeur du dos", "3 x 6 à 10", "1 min 30", "", null, "8"),
-        X("2", "Rowing machine poitrine appuyée, prise neutre", "épaisseur du dos", "3 x 10 à 12", "1 min 30", "", null, "12"),
-        X("3", "Pull-over poulie, bras tendus", "grands dorsaux en isolation", "3 x 12 à 15", "1 min", "", null, "15"),
-        X("4", "Oiseau à la machine", "arrière des épaules", "3 x 15", "1 min", "", null, "15"),
-        X("5", "Curl barre EZ ou curl au pupitre", "biceps", "3 x 10 à 12", "1 min", "", null, "12"),
-        X("6", "Curl marteau à la corde", "brachial et avant-bras", "3 x 12", "1 min", "", null, "12")
-      ] }
-    },
-    legs: {
-      label: "Legs",
-      A: { warm: "Échauffement, 5 min : squat barre seule x 12, puis 40 kg x 6.", ex: [
-        X("1", "Squat barre", "quadriceps et fessiers, lourd", "3 x 8 à 10", "2 min", "Reprise 60 kg, été 70 kg", 60, "8"),
-        X("2", "Soulevé de terre barre", "ischios, fessiers, bas du dos", "3 x 8 à 10", "2 min", "Reprise 60 kg, été 65 kg", 60, "8"),
-        X("3", "Presse à cuisses", "quadriceps, volume", "3 x 12", "1 min 15", "Reprise 70 kg, été 70 à 80 kg", 70, "12"),
-        X("4a", "Leg curl assis", "ischios en isolation", "3 x 12", "aucun", "Reprise 42 kg, été 47 kg", 42, "12"),
-        X("4b", "Extension de jambes", "quadriceps en isolation", "3 x 12 à 15", "1 min après la paire", "Nouveau : charge à tester", null, "15"),
-        X("5", "Extension mollets debout (machine)", "mollets", "3 x 12 à 15", "45 s", "Reprise 40 kg, été 40 à 45 kg", 40, "15")
-      ] },
-      B: { warm: "Échauffement, 5 min : 1 à 2 séries légères sur le premier exercice. Charges à trouver et à noter.", ex: [
-        X("1", "Soulevé de terre roumain", "ischios étirés et fessiers", "3 x 8 à 10", "2 min", "", null, "10"),
-        X("2", "Squat gobelet ou fentes bulgares", "quadriceps et fessiers, une jambe à la fois", "3 x 10", "1 min 30", "", null, "10"),
-        X("3", "Presse à cuisses, pieds bas et serrés", "quadriceps", "3 x 12 à 15", "1 min 15", "", null, "15"),
-        X("4", "Leg curl allongé", "ischios en isolation", "3 x 12", "1 min", "", null, "12"),
-        X("5", "Hip thrust", "fessiers", "3 x 10 à 12", "1 min 15", "", null, "12"),
-        X("6", "Extension mollets assis", "mollets, muscle soléaire", "3 x 15", "45 s", "", null, "15")
-      ] }
-    }
-  };
-  var TECH = {"Développé couché barre": {"p": "Allonge-toi, yeux sous la barre. Pieds à plat bien ancrés, omoplates serrées et rabattues vers les fessiers, léger creux lombaire naturel. Fesses, épaules et tête restent collées au banc. Prise un peu plus large que les épaules, poignets droits dans l'axe de l'avant-bras.", "m": "Décroche la barre bras tendus. Descends en 2 secondes jusqu'au bas des pectoraux, coudes à environ 45 degrés du buste. Touche sans rebondir, puis pousse en expirant jusqu'à bras tendus, sans verrouiller sèchement les coudes.", "e": "Coudes écartés à 90 degrés (épaule en danger), rebond sur la poitrine, fesses qui décollent, poignets cassés vers l'arrière, omoplates qui se relâchent en cours de série."}, "Développé couché incliné haltères": {"p": "Banc incliné à 30 degrés environ (pas plus, sinon ça devient l'épaule). Haltères posés sur les cuisses, puis monte-les en position en t'aidant des genoux. Omoplates serrées, dos plaqué, pieds au sol.", "m": "Haltères au-dessus du haut de la poitrine, paumes vers l'avant. Descends en 2 secondes jusqu'à sentir l'étirement des pectoraux, coudes à 45 degrés. Pousse en rapprochant légèrement les haltères en haut, sans les cogner.", "e": "Banc trop incliné, descente trop courte, coudes trop ouverts, haltères qui partent vers l'avant, dos qui se creuse à l'extrême."}, "Développé militaire haltères": {"p": "Assis, dossier à 80 ou 90 degrés, dos plaqué. Haltères à hauteur des épaules, avant-bras verticaux, coudes un peu devant le plan du buste. Abdos gainés, fessiers serrés.", "m": "Pousse vers le haut en expirant, jusqu'à bras presque tendus, haltères qui se rapprochent sans se toucher. Redescends en 2 secondes jusqu'à hauteur des oreilles, avant-bras toujours verticaux.", "e": "Dos qui se creuse, coudes ramenés derrière le buste, descente trop courte, charge trop lourde qui fait tricher avec les jambes ou le dos."}, "Écartés poulie": {"p": "Poulies réglées à hauteur d'épaules (ou légèrement plus haut). Un pas en avant, buste légèrement penché, un pied devant l'autre pour l'équilibre. Coudes légèrement fléchis, et cet angle ne change plus de toute la série.", "m": "Ouvre les bras en arc de cercle jusqu'à sentir l'étirement des pectoraux, puis ramène les mains l'une vers l'autre devant la poitrine, comme pour serrer un arbre. Contracte 1 seconde au centre. Retour lent en 2 à 3 secondes.", "e": "Fléchir et étendre les coudes (ça devient un développé), élan du buste, charge trop lourde qui empêche l'étirement, épaules qui montent vers les oreilles."}, "Élévations latérales": {"p": "Debout, pieds largeur de hanches, léger penché en avant du buste, haltères le long des cuisses. Coudes légèrement fléchis, poignets neutres. Épaules basses, loin des oreilles.", "m": "Monte les haltères sur le côté en pensant « les coudes montent, pas les mains », jusqu'à hauteur d'épaules, pas plus haut. Le petit doigt est un peu plus haut que le pouce. Redescends en 2 à 3 secondes sans lâcher la tension.", "e": "Balancer le corps pour monter la charge, hausser les épaules (trapèzes), monter au-dessus des épaules, charge trop lourde. Mieux vaut léger et propre."}, "Extension triceps au-dessus de la tête (câble)": {"p": "Poulie basse, corde ou poignée en mains, dos à la machine. Un pas en avant, un pied devant l'autre, buste légèrement penché. Coudes pointés vers l'avant, serrés près de la tête, mains derrière la nuque.", "m": "Étends les bras vers l'avant et vers le haut jusqu'à les tendre, en expirant, et contracte 1 seconde. Reviens lentement en 2 à 3 secondes jusqu'à l'étirement complet du triceps derrière la tête. Seuls les avant-bras bougent.", "e": "Coudes qui s'écartent ou descendent, dos qui se creuse, élan du buste, amplitude trop courte au retour (là où le triceps travaille le plus)."}, "Extension triceps corde": {"p": "Poulie haute, corde. Debout, pieds largeur de hanches, buste légèrement penché, coudes collés aux côtes, avant-bras à l'horizontale en départ.", "m": "Pousse la corde vers le bas en écartant les mains en fin de course, jusqu'à bras tendus, en expirant. Contracte 1 seconde. Remonte en 2 secondes jusqu'à ce que les mains soient à hauteur de poitrine, coudes qui ne bougent pas.", "e": "Coudes qui s'écartent ou avancent, buste qui se penche trop pour pousser avec le poids du corps, amplitude incomplète, remontée trop rapide."}, "Développé incliné haltères, lourd": {"p": "Même placement que le développé incliné de la séance A : banc à 30 degrés, omoplates serrées, pieds ancrés, dos plaqué.", "m": "Série plus lourde et plus courte : descente contrôlée 2 secondes, étirement des pectoraux en bas, poussée explosive mais maîtrisée. Coudes à 45 degrés. Garde 1 à 2 répétitions en réserve.", "e": "Sacrifier l'amplitude pour la charge, haltères qui s'écartent en bas, banc trop incliné, tricher avec le bassin qui décolle."}, "Développé couché machine ou haltères": {"p": "Machine : règle le siège pour que les poignées soient à hauteur du milieu de la poitrine. Dos plaqué, omoplates serrées, pieds au sol. Haltères : même placement que sur banc plat, omoplates serrées.", "m": "Pousse en expirant jusqu'à bras presque tendus, contracte les pectoraux 1 seconde. Reviens en 2 secondes jusqu'à sentir l'étirement, sans laisser la charge reposer entre les répétitions.", "e": "Siège trop haut ou trop bas (la poussée part sur les épaules), épaules qui avancent en haut, fesses qui décollent."}, "Développé épaules à la machine": {"p": "Règle le siège pour que les poignées soient à hauteur d'épaules au départ. Dos plaqué contre le dossier, pieds au sol, abdos gainés. Poignées prises à largeur d'épaules.", "m": "Pousse vers le haut en expirant, sans verrouiller les coudes. Redescends en 2 secondes jusqu'à hauteur des oreilles, sans poser les plaques de charge entre les répétitions.", "e": "Dos qui se creuse, haussement d'épaules, descente trop courte, charge trop lourde avec poussée des jambes."}, "Élévations latérales à la poulie": {"p": "Poulie basse, poignée dans la main opposée, debout de côté par rapport à la machine, légèrement penché. Main libre en appui. Coude légèrement fléchi.", "m": "Monte le bras sur le côté jusqu'à hauteur d'épaule, en pensant « le coude monte ». Redescends en 2 à 3 secondes en gardant la tension du câble, qui est constante, même en bas. Fais toutes les répétitions d'un bras, puis l'autre.", "e": "Balancer le buste, hausser l'épaule, monter plus haut que l'épaule, perdre la tension en bas."}, "Dips au poids du corps": {"p": "Prise sur les barres parallèles, bras tendus, épaules basses, jambes croisées derrière. Pour cibler les pectoraux, penche le buste en avant d'environ 30 degrés. Machine assistée ou élastique si tu n'en fais pas encore 8.", "m": "Descends en 2 secondes jusqu'à ce que les épaules arrivent au niveau des coudes (environ 90 degrés), coudes légèrement écartés. Remonte en expirant, sans verrouiller sèchement.", "e": "Descendre trop bas (épaule en danger), épaules qui montent aux oreilles, buste droit (cible plus les triceps), balancement des jambes. Si ça tire dans l'épaule, arrête et remplace par une machine."}, "Extension triceps barre à la poulie": {"p": "Poulie haute, barre droite ou en V. Debout, pieds largeur de hanches, buste légèrement penché, coudes collés aux côtes, mains à largeur d'épaules, avant-bras à l'horizontale au départ.", "m": "Pousse la barre vers les cuisses jusqu'à bras tendus, en expirant, contracte 1 seconde. Remonte en 2 secondes jusqu'à hauteur de poitrine. Seuls les avant-bras bougent.", "e": "Coudes qui bougent, buste qui s'affale sur la barre, charge trop lourde, remontée trop rapide."}, "Tirage poitrine à la poulie": {"p": "Règle le coussin sur les cuisses pour bloquer les jambes. Prise en pronation, un peu plus large que les épaules, pouces autour de la barre. Buste légèrement incliné en arrière (10 à 15 degrés), poitrine sortie.", "m": "Démarre en abaissant les épaules, puis tire la barre vers le haut de la poitrine en menant avec les coudes, qui descendent vers les hanches. Serre les omoplates 1 seconde. Remonte lentement en 2 à 3 secondes jusqu'à bras tendus, en laissant le dos s'étirer.", "e": "Balancer le buste d'avant en arrière, tirer la barre derrière la nuque, tirer avec les biceps au lieu des coudes, haussement d'épaules, remontée incomplète."}, "Rowing poulie assis": {"p": "Assis, pieds sur les appuis, genoux légèrement fléchis. Dos droit, poitrine sortie, épaules basses. Prise neutre (triangle) ou barre, bras tendus au départ.", "m": "Tire la poignée vers le bas du ventre en menant avec les coudes, qui passent près du corps. Serre les omoplates 1 seconde, poitrine ouverte. Reviens en 2 à 3 secondes, bras tendus, en laissant les omoplates s'écarter légèrement.", "e": "Balancer le buste en arrière pour tirer, dos qui s'arrondit, haussement d'épaules, tirer avec les bras seuls, retour trop rapide."}, "Rowing haltères incliné sur poitrine": {"p": "Banc incliné à 30 à 45 degrés, ventre et poitrine posés sur le dossier, tête dépassant un peu. Un haltère dans chaque main, bras pendants, pieds au sol.", "m": "Tire les haltères vers les hanches en menant avec les coudes, serre les omoplates 1 seconde. Redescends en 2 secondes jusqu'à bras tendus. La poitrine ne décolle pas du banc.", "e": "Poitrine qui décolle, haussement d'épaules, tirer vers les épaules, élan, descente incomplète."}, "Tirage vers visage": {"p": "Poulie haute avec corde, réglée à hauteur de tête. Prise en pronation, pouces vers toi. Recule de deux pas, jambes légèrement fléchies, buste droit, épaules basses.", "m": "Tire la corde vers le visage, en écartant les mains de chaque côté du front, coudes hauts (plus haut que les poignets). Serre les omoplates 1 seconde, mains à hauteur des oreilles. Reviens en 2 secondes.", "e": "Charge trop lourde, buste qui part en arrière, coudes plus bas que les mains, haussement d'épaules, mouvement bâclé."}, "Curl incliné assis": {"p": "Banc incliné à 45 à 60 degrés, dos plaqué, tête appuyée. Haltères pendants le long du corps, bras tendus derrière le plan du buste, paumes vers l'avant.", "m": "Plie les coudes pour monter les haltères vers les épaules, coudes qui restent en place, sans avancer. Contracte 1 seconde, descends lentement en 2 à 3 secondes jusqu'à l'étirement complet du biceps.", "e": "Coudes qui avancent, épaules qui s'enroulent vers l'avant, élan, descente incomplète. Charge plus légère que debout, c'est normal."}, "Curl marteau": {"p": "Debout, pieds largeur de hanches, haltères le long des cuisses, paumes face à face (prise neutre). Coudes collés aux côtes, épaules basses.", "m": "Monte les haltères vers les épaules sans tourner les poignets, en gardant les coudes en place. Contracte 1 seconde, redescends en 2 à 3 secondes. Tu peux alterner un bras puis l'autre.", "e": "Balancer le buste, coudes qui avancent, poignets qui cassent, descente trop rapide."}, "Tractions, assistées si besoin": {"p": "Prise en pronation, un peu plus large que les épaules, pouces autour de la barre. Suspendu bras tendus, épaules actives (abaisse-les sans plier les bras), jambes croisées. Machine assistée ou élastique si tu en fais moins de 6.", "m": "Tire en menant avec les coudes vers les hanches, poitrine vers la barre, menton au-dessus de la barre. Serre les omoplates 1 seconde. Redescends en 2 à 3 secondes jusqu'aux bras tendus.", "e": "Balancer le corps, demi-amplitude, menton avancé sans tirer, haussement d'épaules, descente en chute libre."}, "Rowing machine poitrine appuyée, prise neutre": {"p": "Règle le siège pour que la poitrine soit contre le coussin et les poignées à hauteur de la poitrine. Pieds sur les appuis, bras tendus, prise neutre.", "m": "Tire les poignées vers l'arrière en menant avec les coudes, qui passent près des côtes. Serre les omoplates 1 seconde. Reviens en 2 à 3 secondes jusqu'à bras tendus, sans décoller la poitrine.", "e": "Poitrine qui décolle du coussin, haussement d'épaules, tirer avec les bras seuls, retour trop rapide."}, "Pull-over poulie, bras tendus": {"p": "Poulie haute, barre droite ou corde. Debout, un pas en retrait de la poulie, buste penché d'environ 30 degrés, jambes légèrement fléchies. Bras presque tendus, mains à largeur d'épaules.", "m": "Ramène les bras vers les cuisses en arc de cercle, bras presque tendus, en pensant « abaisser les coudes ». Serre les dorsaux 1 seconde en bas. Remonte lentement en 2 à 3 secondes, jusqu'à bien étirer sous les aisselles.", "e": "Fléchir les coudes (ça devient un triceps), élan du buste, dos qui s'arrondit, charge trop lourde."}, "Oiseau à la machine": {"p": "Machine « pec deck » inversée : siège réglé pour que les poignées soient à hauteur d'épaules, poitrine contre le coussin, prise neutre ou en pronation. Coudes légèrement fléchis.", "m": "Ouvre les bras vers l'arrière en arc de cercle, jusqu'à ce que les mains soient dans l'axe des épaules. Serre les arrière-épaules et les omoplates 1 seconde. Reviens en 2 à 3 secondes, sans poser la charge.", "e": "Haussement d'épaules, poitrine qui décolle, tirer avec les bras au lieu des arrière-épaules, charge trop lourde et mouvement raccourci."}, "Curl barre EZ ou curl au pupitre": {"p": "Debout (ou assis au pupitre, aisselles calées), barre EZ prise aux courbes intérieures, mains à largeur d'épaules. Coudes collés aux côtes, épaules basses, abdos gainés.", "m": "Monte la barre vers les épaules en gardant les coudes en place. Contracte 1 seconde en haut, redescends en 2 à 3 secondes jusqu'aux bras presque tendus (pas verrouillés).", "e": "Balancer le dos pour monter la charge, coudes qui avancent, poignets qui cassent, descente trop rapide, charge trop lourde."}, "Curl marteau à la corde": {"p": "Poulie basse avec corde, debout face à la machine, pieds largeur de hanches, coudes collés aux côtes. Prise neutre, paumes face à face.", "m": "Monte la corde vers les épaules, coudes immobiles, en écartant légèrement les mains en haut. Contracte 1 seconde, redescends en 2 à 3 secondes en gardant la tension du câble.", "e": "Balancer le buste, coudes qui avancent, perdre la tension en bas, charge trop lourde."}, "Squat barre": {"p": "Barre sur le haut du dos (sur les trapèzes, pas sur la nuque), mains serrées pour caler la barre. Pieds largeur d'épaules ou un peu plus, pointes légèrement ouvertes de 15 à 30 degrés. Inspire, gaine les abdos (comme avant un coup de poing), regard à l'horizontale.", "m": "Descends en fléchissant les hanches et les genoux ensemble, genoux dans l'axe des pieds, dos droit, jusqu'à ce que les cuisses soient au moins parallèles au sol. Remonte en poussant le sol avec tout le pied, en expirant en haut ou au passage du point dur.", "e": "Genoux qui rentrent vers l'intérieur, talons qui décollent, dos qui s'arrondit en bas, descente trop courte, buste qui s'effondre vers l'avant. Prévois une barre de sécurité ou un pareur dès que la charge est lourde."}, "Soulevé de terre barre": {"p": "Pieds largeur de hanches, barre au-dessus du milieu des pieds, tibias proches de la barre. Penche-toi en poussant les hanches vers l'arrière, prise juste à l'extérieur des jambes. Dos plat, poitrine sortie, omoplates au-dessus de la barre, bras tendus.", "m": "Gaine, puis pousse le sol avec les jambes pendant que la barre reste collée au corps. Une fois passée les genoux, pousse les hanches vers l'avant jusqu'à debout, fesses serrées, sans te cambrer. Redescends en repoussant les hanches vers l'arrière, barre collée aux jambes.", "e": "Dos qui s'arrondit, barre qui s'éloigne du corps, hanches qui montent avant les épaules, hyperextension en haut, lâcher la barre en bas. Si le dos s'arrondit, baisse la charge."}, "Presse à cuisses": {"p": "Dos et fesses bien plaqués au siège, pieds sur la plateforme à largeur d'épaules, à mi-hauteur, pointes légèrement ouvertes. Poignées en mains.", "m": "Décroche, descends en 2 secondes jusqu'à environ 90 degrés au genou, sans que le bassin décolle. Pousse en expirant, genoux dans l'axe des pieds, sans verrouiller sèchement les jambes en haut.", "e": "Bassin qui se décolle en bas (dos qui s'arrondit), genoux qui rentrent, amplitude trop courte, verrouillage des genoux, charge trop lourde."}, "Leg curl assis": {"p": "Règle le dossier et le coussin pour que l'articulation du genou soit alignée avec l'axe de la machine. Coussin au-dessus des chevilles, cuisses bloquées, dos plaqué.", "m": "Plie les genoux pour ramener les talons vers les fesses, en expirant. Contracte 1 seconde. Reviens en 2 à 3 secondes jusqu'à l'étirement complet des ischios, sans poser les plaques.", "e": "Fesses qui décollent, élan, amplitude trop courte, retour trop rapide, charge trop lourde."}, "Extension de jambes": {"p": "Règle le dossier pour que le creux du genou touche le bord du siège, et le coussin au-dessus des chevilles. Dos plaqué, mains sur les poignées. Pointes de pied vers le haut.", "m": "Étends les jambes en expirant jusqu'à les tendre presque entièrement, contracte les quadriceps 1 seconde. Redescends en 2 à 3 secondes, sans poser les plaques. Commence léger : mouvement nouveau.", "e": "Élan, fesses qui décollent, verrouillage brutal des genoux, charge trop lourde. Si le genou tire, stoppe et baisse la charge."}, "Extension mollets debout (machine)": {"p": "Épaules sous les coussins, dos droit, avant des pieds sur le bord de la plateforme, talons dans le vide. Jambes presque tendues (pas verrouillées).", "m": "Descends les talons le plus bas possible pour étirer les mollets, marque 1 à 2 secondes. Monte sur la pointe des pieds le plus haut possible, contracte 1 seconde, puis redescends lentement.", "e": "Rebondir en bas, amplitude réduite, plier les genoux, aller trop vite. Le mollet aime les répétitions lentes et complètes."}, "Soulevé de terre roumain": {"p": "Debout, barre en mains (prise à l'extérieur des cuisses), pieds largeur de hanches, genoux légèrement fléchis et fixes. Dos plat, poitrine sortie, omoplates serrées.", "m": "Pousse les hanches vers l'arrière, comme pour fermer une porte avec les fesses. La barre glisse le long des cuisses jusqu'à sous les genoux, ou jusqu'à sentir l'étirement des ischios. Remonte en poussant les hanches vers l'avant, fesses serrées.", "e": "Dos qui s'arrondit, barre loin des jambes, flexion des genoux qui change en cours de mouvement (ça devient un soulevé classique), cambrure en haut."}, "Squat gobelet ou fentes bulgares": {"p": "Gobelet : haltère tenu contre la poitrine, coudes dessous, pieds largeur d'épaules, pointes ouvertes. Bulgare : pied arrière posé sur un banc, pied avant à environ 60 à 80 cm du banc, buste légèrement penché, haltères le long du corps.", "m": "Gobelet : descends entre les jambes, dos droit, coudes à l'intérieur des genoux, puis remonte en poussant le sol. Bulgare : descends en pliant la jambe avant jusqu'à ce que la cuisse soit parallèle au sol, genou dans l'axe du pied, puis remonte en poussant sur le talon. Une jambe à la fois.", "e": "Talons qui décollent, genou qui rentre, buste effondré, pied avant trop près du banc, descente trop courte, perte d'équilibre par manque de gainage."}, "Presse à cuisses, pieds bas et serrés": {"p": "Dos et fesses plaqués, pieds bas sur la plateforme, écartés d'environ la largeur de hanches, pointes droites. Les genoux vont donc plus loin vers l'avant, ce qui cible les quadriceps.", "m": "Descends en 2 secondes jusqu'à environ 90 degrés au genou, talons toujours au contact de la plateforme. Pousse en expirant, sans verrouiller les genoux.", "e": "Talons qui décollent, bassin qui se décolle, genoux qui rentrent, amplitude courte, charge trop lourde."}, "Leg curl allongé": {"p": "Allongé sur le ventre, genoux au bord du banc, coussin juste au-dessus des talons. Hanches plaquées sur le banc, mains sur les poignées.", "m": "Plie les genoux pour ramener les talons vers les fesses en expirant. Contracte 1 seconde. Redescends en 2 à 3 secondes jusqu'aux jambes presque tendues.", "e": "Fesses qui se soulèvent, dos qui se creuse, élan, charge trop lourde, retour trop rapide."}, "Hip thrust": {"p": "Haut du dos (omoplates) calé contre un banc, genoux fléchis à 90 degrés, pieds à plat à largeur de hanches, barre ou haltère posé sur les hanches (avec coussin). Menton rentré, regard vers l'avant.", "m": "Pousse sur les talons et monte les hanches jusqu'à ce que le corps forme une ligne droite des genoux aux épaules. Serre fort les fessiers 1 seconde en haut. Redescends en 2 secondes sans poser les fesses au sol.", "e": "Cambrer le bas du dos en haut (au lieu de pousser avec les fessiers), pieds trop loin ou trop près, menton qui monte, amplitude incomplète."}, "Extension mollets assis": {"p": "Assis, genoux sous le coussin, avant des pieds sur la plateforme, talons dans le vide.", "m": "Descends les talons le plus bas possible, marque 1 à 2 secondes. Monte sur la pointe des pieds, contracte 1 seconde, redescends lentement. Séries plus longues et lentes pour cibler le soléaire.", "e": "Rebondir, amplitude réduite, aller trop vite, soulever le coussin avec les genoux sans pousser les pieds."}};
+  var LIB = {"dc_barre":{"name":"Développé couché barre","equip":"Barre","plan":50,"ref":"Reprise 50 kg, été 55 kg","tech":{"p":"Allonge-toi, yeux sous la barre. Pieds à plat bien ancrés, omoplates serrées et rabattues vers les fessiers, léger creux lombaire naturel. Fesses, épaules et tête restent collées au banc. Prise un peu plus large que les épaules, poignets droits dans l'axe de l'avant-bras.","m":"Décroche la barre bras tendus. Descends en 2 secondes jusqu'au bas des pectoraux, coudes à environ 45 degrés du buste. Touche sans rebondir, puis pousse en expirant jusqu'à bras tendus, sans verrouiller sèchement les coudes.","e":"Coudes écartés à 90 degrés (épaule en danger), rebond sur la poitrine, fesses qui décollent, poignets cassés vers l'arrière, omoplates qui se relâchent en cours de série."}},"inc_halteres":{"name":"Développé incliné haltères","equip":"Haltères","plan":20,"ref":"Reprise 20 kg par haltère, été 20 à 25 kg","tech":{"p":"Banc incliné à 30 degrés environ (pas plus, sinon ça devient l'épaule). Haltères posés sur les cuisses, puis monte-les en position en t'aidant des genoux. Omoplates serrées, dos plaqué, pieds au sol.","m":"Haltères au-dessus du haut de la poitrine, paumes vers l'avant. Descends en 2 secondes jusqu'à sentir l'étirement des pectoraux, coudes à 45 degrés. Pousse en rapprochant légèrement les haltères en haut, sans les cogner.","e":"Banc trop incliné, descente trop courte, coudes trop ouverts, haltères qui partent vers l'avant, dos qui se creuse à l'extrême."}},"mil_halteres":{"name":"Développé militaire haltères","equip":"Haltères","plan":18,"ref":"Reprise 18 kg par haltère, été 20 kg","tech":{"p":"Assis, dossier à 80 ou 90 degrés, dos plaqué. Haltères à hauteur des épaules, avant-bras verticaux, coudes un peu devant le plan du buste. Abdos gainés, fessiers serrés.","m":"Pousse vers le haut en expirant, jusqu'à bras presque tendus, haltères qui se rapprochent sans se toucher. Redescends en 2 secondes jusqu'à hauteur des oreilles, avant-bras toujours verticaux.","e":"Dos qui se creuse, coudes ramenés derrière le buste, descente trop courte, charge trop lourde qui fait tricher avec les jambes ou le dos."}},"ecartes_poulie":{"name":"Écartés poulie","equip":"Poulie","plan":25,"ref":"Reprise 25 kg, été 30 kg","tech":{"p":"Poulies réglées à hauteur d'épaules (ou légèrement plus haut). Un pas en avant, buste légèrement penché, un pied devant l'autre pour l'équilibre. Coudes légèrement fléchis, et cet angle ne change plus de toute la série.","m":"Ouvre les bras en arc de cercle jusqu'à sentir l'étirement des pectoraux, puis ramène les mains l'une vers l'autre devant la poitrine, comme pour serrer un arbre. Contracte 1 seconde au centre. Retour lent en 2 à 3 secondes.","e":"Fléchir et étendre les coudes (ça devient un développé), élan du buste, charge trop lourde qui empêche l'étirement, épaules qui montent vers les oreilles."}},"elev_lat":{"name":"Élévations latérales haltères","equip":"Haltères","plan":8,"ref":"Nouveau : 8 kg par haltère à tester","tech":{"p":"Debout, pieds largeur de hanches, léger penché en avant du buste, haltères le long des cuisses. Coudes légèrement fléchis, poignets neutres. Épaules basses, loin des oreilles.","m":"Monte les haltères sur le côté en pensant « les coudes montent, pas les mains », jusqu'à hauteur d'épaules, pas plus haut. Le petit doigt est un peu plus haut que le pouce. Redescends en 2 à 3 secondes sans lâcher la tension.","e":"Balancer le corps pour monter la charge, hausser les épaules (trapèzes), monter au-dessus des épaules, charge trop lourde. Mieux vaut léger et propre."}},"tri_overhead":{"name":"Extension triceps au-dessus de la tête (câble)","equip":"Poulie","plan":15,"ref":"Reprise 15 kg, été 15 à 20 kg","tech":{"p":"Poulie basse, corde ou poignée en mains, dos à la machine. Un pas en avant, un pied devant l'autre, buste légèrement penché. Coudes pointés vers l'avant, serrés près de la tête, mains derrière la nuque.","m":"Étends les bras vers l'avant et vers le haut jusqu'à les tendre, en expirant, et contracte 1 seconde. Reviens lentement en 2 à 3 secondes jusqu'à l'étirement complet du triceps derrière la tête. Seuls les avant-bras bougent.","e":"Coudes qui s'écartent ou descendent, dos qui se creuse, élan du buste, amplitude trop courte au retour (là où le triceps travaille le plus)."}},"tri_corde":{"name":"Extension triceps corde","equip":"Poulie","plan":25,"ref":"Reprise 25 kg, été 25 à 30 kg","tech":{"p":"Poulie haute, corde. Debout, pieds largeur de hanches, buste légèrement penché, coudes collés aux côtes, avant-bras à l'horizontale en départ.","m":"Pousse la corde vers le bas en écartant les mains en fin de course, jusqu'à bras tendus, en expirant. Contracte 1 seconde. Remonte en 2 secondes jusqu'à ce que les mains soient à hauteur de poitrine, coudes qui ne bougent pas.","e":"Coudes qui s'écartent ou avancent, buste qui se penche trop pour pousser avec le poids du corps, amplitude incomplète, remontée trop rapide."}},"dc_machine":{"name":"Développé couché machine","equip":"Machine","plan":null,"ref":"","tech":{"p":"Machine : règle le siège pour que les poignées soient à hauteur du milieu de la poitrine. Dos plaqué, omoplates serrées, pieds au sol. Haltères : même placement que sur banc plat, omoplates serrées.","m":"Pousse en expirant jusqu'à bras presque tendus, contracte les pectoraux 1 seconde. Reviens en 2 secondes jusqu'à sentir l'étirement, sans laisser la charge reposer entre les répétitions.","e":"Siège trop haut ou trop bas (la poussée part sur les épaules), épaules qui avancent en haut, fesses qui décollent."}},"epaules_machine":{"name":"Développé épaules à la machine","equip":"Machine","plan":null,"ref":"","tech":{"p":"Règle le siège pour que les poignées soient à hauteur d'épaules au départ. Dos plaqué contre le dossier, pieds au sol, abdos gainés. Poignées prises à largeur d'épaules.","m":"Pousse vers le haut en expirant, sans verrouiller les coudes. Redescends en 2 secondes jusqu'à hauteur des oreilles, sans poser les plaques de charge entre les répétitions.","e":"Dos qui se creuse, haussement d'épaules, descente trop courte, charge trop lourde avec poussée des jambes."}},"elev_poulie":{"name":"Élévations latérales à la poulie","equip":"Poulie","plan":null,"ref":"","tech":{"p":"Poulie basse, poignée dans la main opposée, debout de côté par rapport à la machine, légèrement penché. Main libre en appui. Coude légèrement fléchi.","m":"Monte le bras sur le côté jusqu'à hauteur d'épaule, en pensant « le coude monte ». Redescends en 2 à 3 secondes en gardant la tension du câble, qui est constante, même en bas. Fais toutes les répétitions d'un bras, puis l'autre.","e":"Balancer le buste, hausser l'épaule, monter plus haut que l'épaule, perdre la tension en bas."}},"dips":{"name":"Dips au poids du corps","equip":"Poids du corps","plan":null,"ref":"","tech":{"p":"Prise sur les barres parallèles, bras tendus, épaules basses, jambes croisées derrière. Pour cibler les pectoraux, penche le buste en avant d'environ 30 degrés. Machine assistée ou élastique si tu n'en fais pas encore 8.","m":"Descends en 2 secondes jusqu'à ce que les épaules arrivent au niveau des coudes (environ 90 degrés), coudes légèrement écartés. Remonte en expirant, sans verrouiller sèchement.","e":"Descendre trop bas (épaule en danger), épaules qui montent aux oreilles, buste droit (cible plus les triceps), balancement des jambes. Si ça tire dans l'épaule, arrête et remplace par une machine."}},"tri_barre":{"name":"Extension triceps barre à la poulie","equip":"Poulie","plan":null,"ref":"","tech":{"p":"Poulie haute, barre droite ou en V. Debout, pieds largeur de hanches, buste légèrement penché, coudes collés aux côtes, mains à largeur d'épaules, avant-bras à l'horizontale au départ.","m":"Pousse la barre vers les cuisses jusqu'à bras tendus, en expirant, contracte 1 seconde. Remonte en 2 secondes jusqu'à hauteur de poitrine. Seuls les avant-bras bougent.","e":"Coudes qui bougent, buste qui s'affale sur la barre, charge trop lourde, remontée trop rapide."}},"tirage_poitrine":{"name":"Tirage poitrine à la poulie","equip":"Poulie","plan":32.5,"ref":"Reprise 32,5 kg, été 35 à 40 kg","tech":{"p":"Règle le coussin sur les cuisses pour bloquer les jambes. Prise en pronation, un peu plus large que les épaules, pouces autour de la barre. Buste légèrement incliné en arrière (10 à 15 degrés), poitrine sortie.","m":"Démarre en abaissant les épaules, puis tire la barre vers le haut de la poitrine en menant avec les coudes, qui descendent vers les hanches. Serre les omoplates 1 seconde. Remonte lentement en 2 à 3 secondes jusqu'à bras tendus, en laissant le dos s'étirer.","e":"Balancer le buste d'avant en arrière, tirer la barre derrière la nuque, tirer avec les biceps au lieu des coudes, haussement d'épaules, remontée incomplète."}},"row_poulie":{"name":"Rowing poulie assis","equip":"Poulie","plan":45,"ref":"Reprise 45 kg, été 50 kg","tech":{"p":"Assis, pieds sur les appuis, genoux légèrement fléchis. Dos droit, poitrine sortie, épaules basses. Prise neutre (triangle) ou barre, bras tendus au départ.","m":"Tire la poignée vers le bas du ventre en menant avec les coudes, qui passent près du corps. Serre les omoplates 1 seconde, poitrine ouverte. Reviens en 2 à 3 secondes, bras tendus, en laissant les omoplates s'écarter légèrement.","e":"Balancer le buste en arrière pour tirer, dos qui s'arrondit, haussement d'épaules, tirer avec les bras seuls, retour trop rapide."}},"row_halteres_incline":{"name":"Rowing haltères incliné sur poitrine","equip":"Haltères","plan":15,"ref":"Reprise 15 kg par haltère, été 15 à 20 kg","tech":{"p":"Banc incliné à 30 à 45 degrés, ventre et poitrine posés sur le dossier, tête dépassant un peu. Un haltère dans chaque main, bras pendants, pieds au sol.","m":"Tire les haltères vers les hanches en menant avec les coudes, serre les omoplates 1 seconde. Redescends en 2 secondes jusqu'à bras tendus. La poitrine ne décolle pas du banc.","e":"Poitrine qui décolle, haussement d'épaules, tirer vers les épaules, élan, descente incomplète."}},"face_pull":{"name":"Tirage vers visage","equip":"Poulie","plan":15,"ref":"Reprise 15 kg, été 15 à 25 kg","tech":{"p":"Poulie haute avec corde, réglée à hauteur de tête. Prise en pronation, pouces vers toi. Recule de deux pas, jambes légèrement fléchies, buste droit, épaules basses.","m":"Tire la corde vers le visage, en écartant les mains de chaque côté du front, coudes hauts (plus haut que les poignets). Serre les omoplates 1 seconde, mains à hauteur des oreilles. Reviens en 2 secondes.","e":"Charge trop lourde, buste qui part en arrière, coudes plus bas que les mains, haussement d'épaules, mouvement bâclé."}},"curl_incline":{"name":"Curl incliné assis","equip":"Haltères","plan":12,"ref":"Reprise 12 kg par haltère, été 15 kg","tech":{"p":"Banc incliné à 45 à 60 degrés, dos plaqué, tête appuyée. Haltères pendants le long du corps, bras tendus derrière le plan du buste, paumes vers l'avant.","m":"Plie les coudes pour monter les haltères vers les épaules, coudes qui restent en place, sans avancer. Contracte 1 seconde, descends lentement en 2 à 3 secondes jusqu'à l'étirement complet du biceps.","e":"Coudes qui avancent, épaules qui s'enroulent vers l'avant, élan, descente incomplète. Charge plus légère que debout, c'est normal."}},"curl_marteau":{"name":"Curl marteau","equip":"Haltères","plan":12,"ref":"Reprise 12 kg par haltère, été 15 kg","tech":{"p":"Debout, pieds largeur de hanches, haltères le long des cuisses, paumes face à face (prise neutre). Coudes collés aux côtes, épaules basses.","m":"Monte les haltères vers les épaules sans tourner les poignets, en gardant les coudes en place. Contracte 1 seconde, redescends en 2 à 3 secondes. Tu peux alterner un bras puis l'autre.","e":"Balancer le buste, coudes qui avancent, poignets qui cassent, descente trop rapide."}},"tractions":{"name":"Tractions (assistées si besoin)","equip":"Poids du corps","plan":null,"ref":"","tech":{"p":"Prise en pronation, un peu plus large que les épaules, pouces autour de la barre. Suspendu bras tendus, épaules actives (abaisse-les sans plier les bras), jambes croisées. Machine assistée ou élastique si tu en fais moins de 6.","m":"Tire en menant avec les coudes vers les hanches, poitrine vers la barre, menton au-dessus de la barre. Serre les omoplates 1 seconde. Redescends en 2 à 3 secondes jusqu'aux bras tendus.","e":"Balancer le corps, demi-amplitude, menton avancé sans tirer, haussement d'épaules, descente en chute libre."}},"row_machine":{"name":"Rowing machine poitrine appuyée, prise neutre","equip":"Machine","plan":null,"ref":"","tech":{"p":"Règle le siège pour que la poitrine soit contre le coussin et les poignées à hauteur de la poitrine. Pieds sur les appuis, bras tendus, prise neutre.","m":"Tire les poignées vers l'arrière en menant avec les coudes, qui passent près des côtes. Serre les omoplates 1 seconde. Reviens en 2 à 3 secondes jusqu'à bras tendus, sans décoller la poitrine.","e":"Poitrine qui décolle du coussin, haussement d'épaules, tirer avec les bras seuls, retour trop rapide."}},"pullover_poulie":{"name":"Pull-over poulie, bras tendus","equip":"Poulie","plan":null,"ref":"","tech":{"p":"Poulie haute, barre droite ou corde. Debout, un pas en retrait de la poulie, buste penché d'environ 30 degrés, jambes légèrement fléchies. Bras presque tendus, mains à largeur d'épaules.","m":"Ramène les bras vers les cuisses en arc de cercle, bras presque tendus, en pensant « abaisser les coudes ». Serre les dorsaux 1 seconde en bas. Remonte lentement en 2 à 3 secondes, jusqu'à bien étirer sous les aisselles.","e":"Fléchir les coudes (ça devient un triceps), élan du buste, dos qui s'arrondit, charge trop lourde."}},"oiseau_machine":{"name":"Oiseau à la machine","equip":"Machine","plan":null,"ref":"","tech":{"p":"Machine « pec deck » inversée : siège réglé pour que les poignées soient à hauteur d'épaules, poitrine contre le coussin, prise neutre ou en pronation. Coudes légèrement fléchis.","m":"Ouvre les bras vers l'arrière en arc de cercle, jusqu'à ce que les mains soient dans l'axe des épaules. Serre les arrière-épaules et les omoplates 1 seconde. Reviens en 2 à 3 secondes, sans poser la charge.","e":"Haussement d'épaules, poitrine qui décolle, tirer avec les bras au lieu des arrière-épaules, charge trop lourde et mouvement raccourci."}},"curl_barre_ez":{"name":"Curl barre EZ ou curl au pupitre","equip":"Barre","plan":null,"ref":"","tech":{"p":"Debout (ou assis au pupitre, aisselles calées), barre EZ prise aux courbes intérieures, mains à largeur d'épaules. Coudes collés aux côtes, épaules basses, abdos gainés.","m":"Monte la barre vers les épaules en gardant les coudes en place. Contracte 1 seconde en haut, redescends en 2 à 3 secondes jusqu'aux bras presque tendus (pas verrouillés).","e":"Balancer le dos pour monter la charge, coudes qui avancent, poignets qui cassent, descente trop rapide, charge trop lourde."}},"curl_marteau_corde":{"name":"Curl marteau à la corde","equip":"Poulie","plan":null,"ref":"","tech":{"p":"Poulie basse avec corde, debout face à la machine, pieds largeur de hanches, coudes collés aux côtes. Prise neutre, paumes face à face.","m":"Monte la corde vers les épaules, coudes immobiles, en écartant légèrement les mains en haut. Contracte 1 seconde, redescends en 2 à 3 secondes en gardant la tension du câble.","e":"Balancer le buste, coudes qui avancent, perdre la tension en bas, charge trop lourde."}},"squat_barre":{"name":"Squat barre","equip":"Barre","plan":60,"ref":"Reprise 60 kg, été 70 kg","tech":{"p":"Barre sur le haut du dos (sur les trapèzes, pas sur la nuque), mains serrées pour caler la barre. Pieds largeur d'épaules ou un peu plus, pointes légèrement ouvertes de 15 à 30 degrés. Inspire, gaine les abdos (comme avant un coup de poing), regard à l'horizontale.","m":"Descends en fléchissant les hanches et les genoux ensemble, genoux dans l'axe des pieds, dos droit, jusqu'à ce que les cuisses soient au moins parallèles au sol. Remonte en poussant le sol avec tout le pied, en expirant en haut ou au passage du point dur.","e":"Genoux qui rentrent vers l'intérieur, talons qui décollent, dos qui s'arrondit en bas, descente trop courte, buste qui s'effondre vers l'avant. Prévois une barre de sécurité ou un pareur dès que la charge est lourde."}},"sdt_barre":{"name":"Soulevé de terre barre","equip":"Barre","plan":60,"ref":"Reprise 60 kg, été 65 kg","tech":{"p":"Pieds largeur de hanches, barre au-dessus du milieu des pieds, tibias proches de la barre. Penche-toi en poussant les hanches vers l'arrière, prise juste à l'extérieur des jambes. Dos plat, poitrine sortie, omoplates au-dessus de la barre, bras tendus.","m":"Gaine, puis pousse le sol avec les jambes pendant que la barre reste collée au corps. Une fois passée les genoux, pousse les hanches vers l'avant jusqu'à debout, fesses serrées, sans te cambrer. Redescends en repoussant les hanches vers l'arrière, barre collée aux jambes.","e":"Dos qui s'arrondit, barre qui s'éloigne du corps, hanches qui montent avant les épaules, hyperextension en haut, lâcher la barre en bas. Si le dos s'arrondit, baisse la charge."}},"presse":{"name":"Presse à cuisses","equip":"Machine","plan":70,"ref":"Reprise 70 kg, été 70 à 80 kg","tech":{"p":"Dos et fesses bien plaqués au siège, pieds sur la plateforme à largeur d'épaules, à mi-hauteur, pointes légèrement ouvertes. Poignées en mains.","m":"Décroche, descends en 2 secondes jusqu'à environ 90 degrés au genou, sans que le bassin décolle. Pousse en expirant, genoux dans l'axe des pieds, sans verrouiller sèchement les jambes en haut.","e":"Bassin qui se décolle en bas (dos qui s'arrondit), genoux qui rentrent, amplitude trop courte, verrouillage des genoux, charge trop lourde."}},"leg_curl_assis":{"name":"Leg curl assis","equip":"Machine","plan":42,"ref":"Reprise 42 kg, été 47 kg","tech":{"p":"Règle le dossier et le coussin pour que l'articulation du genou soit alignée avec l'axe de la machine. Coussin au-dessus des chevilles, cuisses bloquées, dos plaqué.","m":"Plie les genoux pour ramener les talons vers les fesses, en expirant. Contracte 1 seconde. Reviens en 2 à 3 secondes jusqu'à l'étirement complet des ischios, sans poser les plaques.","e":"Fesses qui décollent, élan, amplitude trop courte, retour trop rapide, charge trop lourde."}},"leg_extension":{"name":"Extension de jambes","equip":"Machine","plan":null,"ref":"Nouveau : charge à tester","tech":{"p":"Règle le dossier pour que le creux du genou touche le bord du siège, et le coussin au-dessus des chevilles. Dos plaqué, mains sur les poignées. Pointes de pied vers le haut.","m":"Étends les jambes en expirant jusqu'à les tendre presque entièrement, contracte les quadriceps 1 seconde. Redescends en 2 à 3 secondes, sans poser les plaques. Commence léger : mouvement nouveau.","e":"Élan, fesses qui décollent, verrouillage brutal des genoux, charge trop lourde. Si le genou tire, stoppe et baisse la charge."}},"mollets_debout":{"name":"Extension mollets debout (machine)","equip":"Machine","plan":40,"ref":"Reprise 40 kg, été 40 à 45 kg","tech":{"p":"Épaules sous les coussins, dos droit, avant des pieds sur le bord de la plateforme, talons dans le vide. Jambes presque tendues (pas verrouillées).","m":"Descends les talons le plus bas possible pour étirer les mollets, marque 1 à 2 secondes. Monte sur la pointe des pieds le plus haut possible, contracte 1 seconde, puis redescends lentement.","e":"Rebondir en bas, amplitude réduite, plier les genoux, aller trop vite. Le mollet aime les répétitions lentes et complètes."}},"sdt_roumain":{"name":"Soulevé de terre roumain","equip":"Barre","plan":null,"ref":"","tech":{"p":"Debout, barre en mains (prise à l'extérieur des cuisses), pieds largeur de hanches, genoux légèrement fléchis et fixes. Dos plat, poitrine sortie, omoplates serrées.","m":"Pousse les hanches vers l'arrière, comme pour fermer une porte avec les fesses. La barre glisse le long des cuisses jusqu'à sous les genoux, ou jusqu'à sentir l'étirement des ischios. Remonte en poussant les hanches vers l'avant, fesses serrées.","e":"Dos qui s'arrondit, barre loin des jambes, flexion des genoux qui change en cours de mouvement (ça devient un soulevé classique), cambrure en haut."}},"squat_gobelet_bulgare":{"name":"Squat gobelet ou fentes bulgares","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Gobelet : haltère tenu contre la poitrine, coudes dessous, pieds largeur d'épaules, pointes ouvertes. Bulgare : pied arrière posé sur un banc, pied avant à environ 60 à 80 cm du banc, buste légèrement penché, haltères le long du corps.","m":"Gobelet : descends entre les jambes, dos droit, coudes à l'intérieur des genoux, puis remonte en poussant le sol. Bulgare : descends en pliant la jambe avant jusqu'à ce que la cuisse soit parallèle au sol, genou dans l'axe du pied, puis remonte en poussant sur le talon. Une jambe à la fois.","e":"Talons qui décollent, genou qui rentre, buste effondré, pied avant trop près du banc, descente trop courte, perte d'équilibre par manque de gainage."}},"presse_bas":{"name":"Presse à cuisses, pieds bas et serrés","equip":"Machine","plan":null,"ref":"","tech":{"p":"Dos et fesses plaqués, pieds bas sur la plateforme, écartés d'environ la largeur de hanches, pointes droites. Les genoux vont donc plus loin vers l'avant, ce qui cible les quadriceps.","m":"Descends en 2 secondes jusqu'à environ 90 degrés au genou, talons toujours au contact de la plateforme. Pousse en expirant, sans verrouiller les genoux.","e":"Talons qui décollent, bassin qui se décolle, genoux qui rentrent, amplitude courte, charge trop lourde."}},"leg_curl_allonge":{"name":"Leg curl allongé","equip":"Machine","plan":null,"ref":"","tech":{"p":"Allongé sur le ventre, genoux au bord du banc, coussin juste au-dessus des talons. Hanches plaquées sur le banc, mains sur les poignées.","m":"Plie les genoux pour ramener les talons vers les fesses en expirant. Contracte 1 seconde. Redescends en 2 à 3 secondes jusqu'aux jambes presque tendues.","e":"Fesses qui se soulèvent, dos qui se creuse, élan, charge trop lourde, retour trop rapide."}},"hip_thrust":{"name":"Hip thrust","equip":"Barre","plan":null,"ref":"","tech":{"p":"Haut du dos (omoplates) calé contre un banc, genoux fléchis à 90 degrés, pieds à plat à largeur de hanches, barre ou haltère posé sur les hanches (avec coussin). Menton rentré, regard vers l'avant.","m":"Pousse sur les talons et monte les hanches jusqu'à ce que le corps forme une ligne droite des genoux aux épaules. Serre fort les fessiers 1 seconde en haut. Redescends en 2 secondes sans poser les fesses au sol.","e":"Cambrer le bas du dos en haut (au lieu de pousser avec les fessiers), pieds trop loin ou trop près, menton qui monte, amplitude incomplète."}},"mollets_assis":{"name":"Extension mollets assis","equip":"Machine","plan":null,"ref":"","tech":{"p":"Assis, genoux sous le coussin, avant des pieds sur la plateforme, talons dans le vide.","m":"Descends les talons le plus bas possible, marque 1 à 2 secondes. Monte sur la pointe des pieds, contracte 1 seconde, redescends lentement. Séries plus longues et lentes pour cibler le soléaire.","e":"Rebondir, amplitude réduite, aller trop vite, soulever le coussin avec les genoux sans pousser les pieds."}},"dc_halteres":{"name":"Développé couché haltères","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Allongé sur un banc plat, haltères au-dessus de la poitrine, paumes vers l'avant. Omoplates serrées et rabattues, pieds ancrés au sol, dos plaqué avec un léger creux naturel.","m":"Descends en 2 secondes jusqu'à ce que les coudes passent juste sous le niveau du banc, coudes à environ 45 degrés du buste. Pousse en expirant, haltères qui se rapprochent en haut sans se cogner.","e":"Coudes écartés à 90 degrés, haltères qui partent vers l'avant, amplitude courte, fesses qui décollent. Pars plus léger qu'à la barre, la stabilité demande plus de travail."}},"dc_smith":{"name":"Développé couché à la Smith machine","equip":"Smith","plan":null,"ref":"","tech":{"p":"Place le banc pour que la barre guidée descende au bas des pectoraux. Yeux sous la barre, omoplates serrées, pieds ancrés, prise un peu plus large que les épaules.","m":"Décroche en tournant les poignets. Descends en 2 secondes jusqu'au bas des pectoraux, coudes à environ 45 degrés, puis pousse en expirant. Raccroche la barre en fin de série.","e":"Banc mal placé (la barre vient vers le cou ou vers le ventre), rebond sur la poitrine, coudes trop ouverts. La barre est guidée, donc la trajectoire dépend entièrement du placement du banc."}},"inc_barre":{"name":"Développé incliné barre","equip":"Barre","plan":null,"ref":"","tech":{"p":"Banc incliné à 30 degrés environ, yeux sous la barre. Omoplates serrées, pieds ancrés, prise un peu plus large que les épaules.","m":"Décroche, descends en 2 secondes vers le haut de la poitrine (sous les clavicules), coudes à environ 45 degrés. Pousse en expirant jusqu'à bras tendus.","e":"Banc trop incliné (ça devient l'épaule), rebond, coudes ouverts, fesses qui décollent. Un pareur est utile dès que la charge est lourde."}},"inc_machine":{"name":"Développé incliné machine","equip":"Machine","plan":null,"ref":"","tech":{"p":"Règle le siège pour que les poignées soient à hauteur du haut de la poitrine. Dos plaqué, omoplates serrées, pieds au sol.","m":"Pousse vers le haut et l'avant en expirant, jusqu'à bras presque tendus. Reviens en 2 secondes en sentant l'étirement, sans poser les plaques.","e":"Siège trop bas (le milieu des pectoraux prend le relais), épaules qui avancent, amplitude courte, charge trop lourde."}},"pec_deck":{"name":"Pec deck (butterfly)","equip":"Machine","plan":null,"ref":"","tech":{"p":"Règle le siège pour que les poignées soient à hauteur de la poitrine. Dos plaqué, coudes légèrement fléchis, épaules basses.","m":"Rapproche les bras devant la poitrine en serrant les pectoraux 1 seconde. Reviens en 2 à 3 secondes jusqu'à l'étirement, sans que les plaques se touchent.","e":"Épaules qui avancent, haussement d'épaules, ouvrir trop loin derrière le plan du corps (tension sur l'épaule), charge trop lourde."}},"ecartes_halteres":{"name":"Écartés haltères sur banc","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Allongé sur banc plat, haltères au-dessus de la poitrine, paumes face à face, coudes légèrement fléchis, omoplates serrées.","m":"Ouvre les bras en arc de cercle jusqu'à hauteur des épaules, avec l'étirement des pectoraux, puis remonte en rapprochant les haltères comme pour serrer un arbre. Descente en 2 à 3 secondes.","e":"Plier et tendre les coudes (ça devient un développé), descendre trop bas, charge trop lourde, épaules qui montent."}},"dips_machine":{"name":"Dips machine assistée","equip":"Machine","plan":null,"ref":"","tech":{"p":"Règle le contrepoids, genoux sur le coussin. Prise sur les poignées, épaules basses, buste légèrement penché en avant pour cibler les pectoraux.","m":"Descends en 2 secondes jusqu'à environ 90 degrés au coude, puis remonte en expirant sans verrouiller sèchement. Moins de contrepoids rend le mouvement plus dur.","e":"Descendre trop bas, haussement d'épaules, balancer les jambes, buste trop droit (ça cible plus les triceps)."}},"pompes_surelevees":{"name":"Pompes, pieds surélevés","equip":"Poids du corps","plan":null,"ref":"","tech":{"p":"Mains un peu plus larges que les épaules, sous les épaules, pieds posés sur un banc. Corps gainé en ligne droite, fessiers et abdos serrés.","m":"Descends la poitrine vers le sol en 2 secondes, coudes à environ 45 degrés, puis pousse en expirant. Si c'est trop dur, garde les pieds au sol.","e":"Bassin qui s'affaisse ou qui monte, coudes écartés, amplitude courte, tête qui avance."}},"militaire_barre":{"name":"Développé militaire barre debout","equip":"Barre","plan":null,"ref":"","tech":{"p":"Debout, pieds largeur de hanches, barre à hauteur des clavicules, prise un peu plus large que les épaules. Abdos et fessiers gainés, coudes un peu devant la barre.","m":"Pousse la barre droit vers le haut en avançant la tête une fois la barre passée, jusqu'à bras tendus au-dessus de la tête, en expirant. Redescends en 2 secondes aux clavicules.","e":"Dos qui se creuse, jambes qui aident, barre qui part vers l'avant, côtes ouvertes. Si le dos se cambre, passe aux haltères assis."}},"lat_machine":{"name":"Élévations latérales à la machine","equip":"Machine","plan":null,"ref":"","tech":{"p":"Règle le siège pour que les coudes soient à hauteur de l'axe de la machine. Dos plaqué, avant-bras contre les coussins, épaules basses.","m":"Écarte les bras jusqu'à hauteur des épaules, serre 1 seconde, puis reviens en 2 à 3 secondes sans relâcher la tension.","e":"Haussement d'épaules, mouvement de balancier, charge trop lourde, amplitude au-dessus des épaules."}},"oiseau_halteres":{"name":"Oiseau haltères buste penché","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Debout ou assis au bord d'un banc, buste penché à environ 45 degrés, dos plat. Haltères qui pendent, coudes légèrement fléchis.","m":"Monte les bras sur les côtés jusqu'à hauteur des épaules en pensant « les coudes montent », serre les omoplates 1 seconde, redescends en 2 secondes.","e":"Élan du buste, dos qui s'arrondit, haussement d'épaules, charge trop lourde. Commence très léger."}},"ext_halt_tete":{"name":"Extension triceps haltère au-dessus de la tête","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Assis ou debout, un haltère tenu à deux mains par le plateau, bras tendus au-dessus de la tête, coudes proches de la tête.","m":"Plie les coudes pour descendre l'haltère derrière la tête jusqu'à l'étirement du triceps, en 2 secondes, puis tends les bras en expirant.","e":"Coudes qui s'écartent, dos qui se creuse, charge trop lourde pour les poignets, amplitude courte."}},"skull":{"name":"Barre au front (skull crusher)","equip":"Barre","plan":null,"ref":"","tech":{"p":"Allongé sur banc plat, barre EZ à bras tendus au-dessus de la poitrine, légèrement inclinée vers l'arrière, prise étroite.","m":"Plie uniquement les coudes pour descendre la barre vers le front en 2 secondes, puis tends en expirant. Les coudes ne bougent pas.","e":"Coudes qui s'écartent ou avancent, épaules qui bougent, charge trop lourde. Un pareur est utile."}},"tri_poulie_une_main":{"name":"Extension triceps poulie à une main","equip":"Poulie","plan":null,"ref":"","tech":{"p":"Poulie haute, poignée en main, buste légèrement penché, coude collé au côté, avant-bras à l'horizontale au départ.","m":"Pousse vers le bas jusqu'à bras tendu en expirant, contracte 1 seconde, remonte en 2 secondes. Fais toutes les répétitions d'un bras puis de l'autre.","e":"Coude qui bouge, buste qui pousse avec le poids du corps, amplitude incomplète."}},"tirage_neutre":{"name":"Tirage poitrine prise neutre serrée","equip":"Poulie","plan":null,"ref":"","tech":{"p":"Poulie haute avec poignée en V, cuisses bloquées sous le coussin, buste légèrement incliné en arrière, poitrine sortie.","m":"Tire la poignée vers le haut de la poitrine en menant avec les coudes, serre les omoplates 1 seconde, remonte en 2 à 3 secondes bras tendus.","e":"Balancer le buste, haussement d'épaules, tirer avec les bras au lieu des coudes, remontée incomplète."}},"row_barre":{"name":"Rowing barre penché","equip":"Barre","plan":null,"ref":"","tech":{"p":"Debout, pieds largeur de hanches, genoux fléchis, barre en pronation à largeur d'épaules. Buste penché à environ 45 degrés, dos plat, nuque dans le prolongement.","m":"Tire la barre vers le bas du ventre, coudes près du corps, serre les omoplates 1 seconde, puis redescends en 2 secondes bras tendus.","e":"Dos qui s'arrondit, buste qui se redresse pour tirer, barre éloignée des jambes, charge trop lourde. Si ton dos fatigue, choisis une machine."}},"pullover_halt":{"name":"Pull-over haltère","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Allongé en travers d'un banc (haut du dos appuyé) ou sur banc plat, un haltère tenu à deux mains au-dessus de la poitrine, bras presque tendus.","m":"Descends l'haltère derrière la tête en arc de cercle, bras presque tendus, jusqu'à l'étirement des dorsaux, puis ramène-le en expirant, en 2 secondes à la descente.","e":"Coudes qui plient, dos qui se creuse, charge trop lourde pour les épaules."}},"pullover_machine":{"name":"Pull-over à la machine","equip":"Machine","plan":null,"ref":"","tech":{"p":"Règle le siège, coudes sur les coussins, dos plaqué, épaules basses.","m":"Ramène les coudes vers les hanches en arc de cercle, serre les dorsaux 1 seconde, puis reviens en 2 à 3 secondes jusqu'à l'étirement.","e":"Haussement d'épaules, élan, amplitude courte, charge trop lourde."}},"curl_halteres":{"name":"Curl haltères debout (supination)","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Debout, haltères le long des cuisses, paumes face à face, coudes collés aux côtes, épaules basses.","m":"Monte en tournant la paume vers le haut pendant le mouvement, contracte 1 seconde en haut, redescends en 2 à 3 secondes jusqu'aux bras tendus.","e":"Balancer le buste, coudes qui avancent, amplitude réduite, charge trop lourde."}},"curl_poulie":{"name":"Curl poulie basse","equip":"Poulie","plan":null,"ref":"","tech":{"p":"Poulie basse, barre droite ou EZ, debout face à la machine, coudes collés aux côtes.","m":"Monte la barre vers les épaules, coudes immobiles, contracte 1 seconde, redescends en 2 à 3 secondes en gardant la tension du câble.","e":"Balancer le dos, coudes qui avancent, perdre la tension en bas, charge trop lourde."}},"curl_inverse":{"name":"Curl inversé barre EZ","equip":"Barre","plan":null,"ref":"","tech":{"p":"Debout, barre EZ prise en pronation (paumes vers le bas), largeur d'épaules, coudes collés aux côtes.","m":"Monte la barre vers les épaules sans casser les poignets, contracte 1 seconde, redescends en 2 à 3 secondes.","e":"Poignets qui cassent, balancer le corps, charge trop lourde. Commence léger : ce mouvement travaille l'avant-bras."}},"hack_squat":{"name":"Hack squat","equip":"Machine","plan":null,"ref":"","tech":{"p":"Dos et fesses plaqués au dossier, pieds sur la plateforme largeur d'épaules, un peu en avant, pointes légèrement ouvertes.","m":"Déverrouille, descends en 2 à 3 secondes jusqu'à ce que les cuisses soient parallèles au sol, puis pousse en expirant sans verrouiller les genoux.","e":"Talons qui décollent, genoux qui rentrent, bassin qui se décolle du dossier, amplitude courte."}},"squat_smith":{"name":"Squat à la Smith machine","equip":"Smith","plan":null,"ref":"","tech":{"p":"Barre guidée sur le haut du dos, pieds légèrement devant la barre, largeur d'épaules, pointes ouvertes, abdos gainés.","m":"Descends en 2 secondes jusqu'à ce que les cuisses soient parallèles au sol, genoux dans l'axe des pieds, puis remonte en poussant sur tout le pied.","e":"Pieds trop reculés (dos ou genoux qui tirent), talons qui décollent, dos qui s'arrondit. Pense à raccrocher la barre en fin de série."}},"rdl_halt":{"name":"Soulevé de terre roumain haltères","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Debout, haltères devant les cuisses, pieds largeur de hanches, genoux légèrement fléchis et fixes, dos plat.","m":"Pousse les hanches vers l'arrière, les haltères glissent le long des cuisses jusqu'en dessous des genoux, puis remonte en poussant les hanches vers l'avant, fessiers serrés.","e":"Dos qui s'arrondit, haltères loin des jambes, genoux qui bougent, cambrure en haut."}},"leg_curl_debout":{"name":"Leg curl debout (une jambe)","equip":"Machine","plan":null,"ref":"","tech":{"p":"Debout face à la machine, coussin derrière la cheville, une jambe à la fois, mains en appui, genou aligné avec l'axe.","m":"Plie le genou pour ramener le talon vers la fesse, contracte 1 seconde, redescends en 2 à 3 secondes. Fais toutes les répétitions d'une jambe puis de l'autre.","e":"Hanches qui avancent, élan, amplitude courte, charge trop lourde."}},"fentes_halt":{"name":"Fentes avant haltères","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Debout, haltères le long du corps, pieds largeur de hanches, buste droit.","m":"Grand pas en avant, descends en pliant les deux genoux jusqu'à environ 90 degrés (le genou arrière frôle le sol), puis pousse sur le pied avant pour revenir.","e":"Genou avant qui rentre, pas trop court, buste qui s'effondre, talon avant qui décolle."}},"presse_mollets":{"name":"Mollets à la presse","equip":"Machine","plan":null,"ref":"","tech":{"p":"Assis à la presse, dos plaqué, avant des pieds sur le bas de la plateforme, jambes presque tendues.","m":"Pousse sur la pointe des pieds le plus loin possible, contracte 1 seconde, puis laisse remonter les talons pour étirer 1 à 2 secondes.","e":"Plier les genoux, rebondir, amplitude courte."}},"mollet_haltere":{"name":"Mollets une jambe avec haltère","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Debout sur une marche, avant d'un pied sur le bord, haltère dans la main du même côté, l'autre main en appui, l'autre pied levé.","m":"Descends le talon le plus bas possible, étire 1 à 2 secondes, monte sur la pointe, contracte 1 seconde. Fais toutes les répétitions d'une jambe puis de l'autre.","e":"Rebondir, plier le genou, aller trop vite."}},"hip_thrust_machine":{"name":"Hip thrust à la machine","equip":"Machine","plan":null,"ref":"","tech":{"p":"Assis, dos calé contre le pad, ceinture ou barre sur les hanches, pieds à plat largeur de hanches.","m":"Pousse sur les talons, monte les hanches en serrant les fessiers 1 seconde, redescends en 2 secondes.","e":"Cambrer le bas du dos, pieds mal placés, amplitude incomplète."}},"glute_bridge":{"name":"Pont fessier (barre ou haltère)","equip":"Haltères","plan":null,"ref":"","tech":{"p":"Allongé au sol, dos plaqué, genoux fléchis, pieds à plat largeur de hanches, charge posée sur les hanches.","m":"Pousse sur les talons, monte jusqu'à une ligne épaules, hanches, genoux, serre les fessiers 1 seconde, redescends en 2 secondes.","e":"Cambrure lombaire, pieds trop loin, amplitude courte."}},"kickback":{"name":"Kickback fessiers à la poulie","equip":"Poulie","plan":null,"ref":"","tech":{"p":"Poulie basse, sangle à la cheville, face à la machine, mains en appui, buste légèrement penché.","m":"Pousse la jambe vers l'arrière, genou presque tendu, serre le fessier 1 seconde, reviens en 2 secondes. Fais toutes les répétitions d'une jambe puis de l'autre.","e":"Cambrer le dos, élan, hanches qui pivotent."}}};
+  var GROUPS = {"pec_mid":{"label":"Pectoraux, milieu","fam":"push","view":"f","regions":["pecmid"],"alts":["dc_barre","dc_halteres","dc_machine","dc_smith"],"more":["pec_deck","pompes_surelevees"]},"pec_up":{"label":"Pectoraux, haut","fam":"push","view":"f","regions":["pecup"],"alts":["inc_halteres","inc_barre","inc_machine"],"more":["dc_halteres","dc_machine"]},"pec_iso":{"label":"Pectoraux, étirement","fam":"push","view":"f","regions":["pec"],"alts":["ecartes_poulie","pec_deck","ecartes_halteres"],"more":[]},"pec_low":{"label":"Pectoraux, bas","fam":"push","view":"f","regions":["peclow"],"alts":["dips","dips_machine","pompes_surelevees"],"more":["dc_machine"]},"delt_front":{"label":"Épaules, avant","fam":"push","view":"f","regions":["dfront"],"alts":["mil_halteres","epaules_machine","militaire_barre"],"more":[]},"delt_side":{"label":"Épaules, côté","fam":"push","view":"f","regions":["dside"],"alts":["elev_lat","elev_poulie","lat_machine"],"more":[]},"tri_long":{"label":"Triceps, longue portion","fam":"push","view":"b","regions":["tri"],"alts":["tri_overhead","ext_halt_tete","skull"],"more":[]},"tri_lat":{"label":"Triceps, portion latérale","fam":"push","view":"b","regions":["tri"],"alts":["tri_corde","tri_barre","tri_poulie_une_main"],"more":["dips_machine"]},"back_wide":{"label":"Dos, largeur","fam":"pull","view":"b","regions":["lat"],"alts":["tirage_poitrine","tractions","tirage_neutre"],"more":["pullover_poulie"]},"back_thick":{"label":"Dos, épaisseur","fam":"pull","view":"b","regions":["mid"],"alts":["row_poulie","row_machine","row_halteres_incline","row_barre"],"more":[]},"back_iso":{"label":"Dos, dorsaux en isolation","fam":"pull","view":"b","regions":["lat"],"alts":["pullover_poulie","pullover_halt","pullover_machine"],"more":[]},"delt_rear":{"label":"Épaules, arrière","fam":"pull","view":"b","regions":["drear"],"alts":["face_pull","oiseau_machine","oiseau_halteres"],"more":[]},"biceps":{"label":"Biceps","fam":"pull","view":"f","regions":["bi"],"alts":["curl_incline","curl_barre_ez","curl_halteres","curl_poulie"],"more":[]},"brachial":{"label":"Brachial et avant-bras","fam":"pull","view":"f","regions":["fore"],"alts":["curl_marteau","curl_marteau_corde","curl_inverse"],"more":[]},"quad_heavy":{"label":"Cuisses, lourd","fam":"legs","view":"f","regions":["thigh"],"alts":["squat_barre","squat_smith","hack_squat","squat_gobelet_bulgare"],"more":["presse","fentes_halt"]},"hams_hinge":{"label":"Ischios et bas du dos","fam":"legs","view":"b","regions":["thigh","low"],"alts":["sdt_barre","sdt_roumain","rdl_halt"],"more":[]},"quad_vol":{"label":"Quadriceps, volume","fam":"legs","view":"f","regions":["thigh"],"alts":["presse","presse_bas","hack_squat","squat_smith"],"more":["fentes_halt"]},"ham_curl":{"label":"Ischios, isolation","fam":"legs","view":"b","regions":["thigh"],"alts":["leg_curl_assis","leg_curl_allonge","leg_curl_debout"],"more":[]},"quad_iso":{"label":"Quadriceps, isolation","fam":"legs","view":"f","regions":["thigh"],"alts":["leg_extension","fentes_halt"],"more":["hack_squat"]},"glutes":{"label":"Fessiers","fam":"legs","view":"b","regions":["glute"],"alts":["hip_thrust","hip_thrust_machine","glute_bridge","kickback"],"more":[]},"calves":{"label":"Mollets","fam":"legs","view":"f","regions":["calf"],"alts":["mollets_debout","mollets_assis","presse_mollets","mollet_haltere"],"more":[]}};
+  var PROGRAM = {"push":{"label":"Push","A":{"warm":"Échauffement, 5 min : barre seule x 12, puis 35 kg x 6.","slots":[{"tag":"1","g":"pec_mid","def":"dc_barre","scheme":"3 x 8","rest":"1 min 30","rp":"8"},{"tag":"2","g":"pec_up","def":"inc_halteres","scheme":"3 x 10 à 12","rest":"1 min 15","rp":"12"},{"tag":"3","g":"delt_front","def":"mil_halteres","scheme":"3 x 10","rest":"1 min 15","rp":"10"},{"tag":"4a","g":"pec_iso","def":"ecartes_poulie","scheme":"3 x 12","rest":"aucun","rp":"12"},{"tag":"4b","g":"delt_side","def":"elev_lat","scheme":"3 x 12 à 15","rest":"1 min après la paire","rp":"15"},{"tag":"5","g":"tri_long","def":"tri_overhead","scheme":"3 x 12","rest":"45 s","rp":"12"},{"tag":"6","g":"tri_lat","def":"tri_corde","scheme":"3 x 12","rest":"45 s","rp":"12"}]},"B":{"warm":"Échauffement, 5 min : 1 à 2 séries légères sur le premier exercice. Charges à trouver et à noter.","slots":[{"tag":"1","g":"pec_up","def":"inc_halteres","scheme":"3 x 8 à 10","rest":"1 min 30","rp":"10"},{"tag":"2","g":"pec_mid","def":"dc_machine","scheme":"3 x 10 à 12","rest":"1 min 15","rp":"12"},{"tag":"3","g":"delt_front","def":"epaules_machine","scheme":"3 x 10 à 12","rest":"1 min 15","rp":"12"},{"tag":"4","g":"delt_side","def":"elev_poulie","scheme":"3 x 12 à 15","rest":"1 min","rp":"15"},{"tag":"5","g":"pec_low","def":"dips","scheme":"3 x 8 à 12","rest":"1 min 15","rp":"10"},{"tag":"6","g":"tri_lat","def":"tri_barre","scheme":"3 x 10 à 12","rest":"45 s","rp":"12"}]}},"pull":{"label":"Pull","A":{"warm":"Échauffement, 5 min : tirage poitrine 20 kg x 12, puis rowing poulie 30 kg x 10.","slots":[{"tag":"1","g":"back_wide","def":"tirage_poitrine","scheme":"3 x 10 à 12","rest":"1 min 30","rp":"12"},{"tag":"2","g":"back_thick","def":"row_poulie","scheme":"3 x 10 à 12","rest":"1 min 30","rp":"12"},{"tag":"3","g":"back_thick","def":"row_halteres_incline","scheme":"3 x 12","rest":"1 min 15","rp":"12"},{"tag":"4","g":"delt_rear","def":"face_pull","scheme":"3 x 15","rest":"1 min","rp":"15"},{"tag":"5a","g":"biceps","def":"curl_incline","scheme":"3 x 10 à 12","rest":"aucun","rp":"12"},{"tag":"5b","g":"brachial","def":"curl_marteau","scheme":"3 x 10 à 12","rest":"1 min après la paire","rp":"12"}]},"B":{"warm":"Échauffement, 5 min : 1 à 2 séries légères sur le premier exercice. Charges à trouver et à noter.","slots":[{"tag":"1","g":"back_wide","def":"tractions","scheme":"3 x 6 à 10","rest":"1 min 30","rp":"8"},{"tag":"2","g":"back_thick","def":"row_machine","scheme":"3 x 10 à 12","rest":"1 min 30","rp":"12"},{"tag":"3","g":"back_iso","def":"pullover_poulie","scheme":"3 x 12 à 15","rest":"1 min","rp":"15"},{"tag":"4","g":"delt_rear","def":"oiseau_machine","scheme":"3 x 15","rest":"1 min","rp":"15"},{"tag":"5","g":"biceps","def":"curl_barre_ez","scheme":"3 x 10 à 12","rest":"1 min","rp":"12"},{"tag":"6","g":"brachial","def":"curl_marteau_corde","scheme":"3 x 12","rest":"1 min","rp":"12"}]}},"legs":{"label":"Legs","A":{"warm":"Échauffement, 5 min : squat barre seule x 12, puis 40 kg x 6.","slots":[{"tag":"1","g":"quad_heavy","def":"squat_barre","scheme":"3 x 8 à 10","rest":"2 min","rp":"8"},{"tag":"2","g":"hams_hinge","def":"sdt_barre","scheme":"3 x 8 à 10","rest":"2 min","rp":"8"},{"tag":"3","g":"quad_vol","def":"presse","scheme":"3 x 12","rest":"1 min 15","rp":"12"},{"tag":"4a","g":"ham_curl","def":"leg_curl_assis","scheme":"3 x 12","rest":"aucun","rp":"12"},{"tag":"4b","g":"quad_iso","def":"leg_extension","scheme":"3 x 12 à 15","rest":"1 min après la paire","rp":"15"},{"tag":"5","g":"calves","def":"mollets_debout","scheme":"3 x 12 à 15","rest":"45 s","rp":"15"}]},"B":{"warm":"Échauffement, 5 min : 1 à 2 séries légères sur le premier exercice. Charges à trouver et à noter.","slots":[{"tag":"1","g":"hams_hinge","def":"sdt_roumain","scheme":"3 x 8 à 10","rest":"2 min","rp":"10"},{"tag":"2","g":"quad_heavy","def":"squat_gobelet_bulgare","scheme":"3 x 10","rest":"1 min 30","rp":"10"},{"tag":"3","g":"quad_vol","def":"presse_bas","scheme":"3 x 12 à 15","rest":"1 min 15","rp":"15"},{"tag":"4","g":"ham_curl","def":"leg_curl_allonge","scheme":"3 x 12","rest":"1 min","rp":"12"},{"tag":"5","g":"glutes","def":"hip_thrust","scheme":"3 x 10 à 12","rest":"1 min 15","rp":"12"},{"tag":"6","g":"calves","def":"mollets_assis","scheme":"3 x 15","rest":"45 s","rp":"15"}]}}};
   var DAYS = ["push", "pull", "legs"];
   var BASE = Date.UTC(2026, 10, 17); // cycle 1, jour 1 : mardi 17 novembre, Push A
+  var LS_KEY = "journal-ppl-v1";
+
+  // Silhouette : corps gris, zone travaillée en couleur
+  var BODY = '<circle cx="30" cy="9" r="7"/><path d="M16 19Q30 15 44 19L41 62H19Z"/>' +
+    '<rect x="7" y="21" width="8" height="20" rx="4"/><rect x="45" y="21" width="8" height="20" rx="4"/>' +
+    '<rect x="6" y="42" width="7" height="20" rx="3.5"/><rect x="47" y="42" width="7" height="20" rx="3.5"/>' +
+    '<rect x="19" y="63" width="10" height="28" rx="4"/><rect x="31" y="63" width="10" height="28" rx="4"/>' +
+    '<rect x="19.5" y="92" width="8" height="18" rx="4"/><rect x="32.5" y="92" width="8" height="18" rx="4"/>';
+  var REG = {
+    pec: '<ellipse cx="23.5" cy="30" rx="6.5" ry="5"/><ellipse cx="36.5" cy="30" rx="6.5" ry="5"/>',
+    pecmid: '<ellipse cx="23.5" cy="30" rx="6.5" ry="3.4"/><ellipse cx="36.5" cy="30" rx="6.5" ry="3.4"/>',
+    pecup: '<ellipse cx="23.5" cy="26.2" rx="6.5" ry="2.8"/><ellipse cx="36.5" cy="26.2" rx="6.5" ry="2.8"/>',
+    peclow: '<ellipse cx="23.5" cy="34.2" rx="6" ry="2.8"/><ellipse cx="36.5" cy="34.2" rx="6" ry="2.8"/>',
+    dfront: '<circle cx="15" cy="24" r="4.5"/><circle cx="45" cy="24" r="4.5"/>',
+    dside: '<ellipse cx="9.5" cy="26" rx="3.5" ry="5.5"/><ellipse cx="50.5" cy="26" rx="3.5" ry="5.5"/>',
+    drear: '<circle cx="15" cy="24" r="4.5"/><circle cx="45" cy="24" r="4.5"/>',
+    bi: '<rect x="8" y="28" width="6" height="12" rx="3"/><rect x="46" y="28" width="6" height="12" rx="3"/>',
+    fore: '<rect x="6.5" y="43" width="6" height="14" rx="3"/><rect x="47.5" y="43" width="6" height="14" rx="3"/>',
+    tri: '<rect x="8" y="24" width="6" height="14" rx="3"/><rect x="46" y="24" width="6" height="14" rx="3"/>',
+    lat: '<path d="M17 26L26 30L25 52L20 48Z"/><path d="M43 26L34 30L35 52L40 48Z"/>',
+    mid: '<rect x="24" y="23" width="12" height="22" rx="3"/>',
+    low: '<rect x="25" y="50" width="10" height="11" rx="3"/>',
+    thigh: '<rect x="19" y="63" width="10" height="28" rx="4"/><rect x="31" y="63" width="10" height="28" rx="4"/>',
+    glute: '<ellipse cx="24.5" cy="66" rx="6" ry="5"/><ellipse cx="35.5" cy="66" rx="6" ry="5"/>',
+    calf: '<rect x="19.5" y="92" width="8" height="18" rx="4"/><rect x="32.5" y="92" width="8" height="18" rx="4"/>'
+  };
+  function iconSvg(g) {
+    var gr = GROUPS[g], regs = "";
+    gr.regions.forEach(function (r) { regs += REG[r]; });
+    return '<svg class="mi" viewBox="0 0 60 112" aria-hidden="true"><g class="bd">' + BODY + '</g><g class="hl">' + regs + '</g></svg>';
+  }
 
   // État
-  var state = { date: todayStr(), day: "push", variant: "A", logs: {}, sheet: {}, sheetVer: 0 };
-  var db = null;
-  var LS_KEY = "journal-ppl-v1";
+  var state = { date: todayStr(), day: "push", variant: "A", logs: {}, sheet: {}, sel: {}, sheetVer: 0 };
+  var openPick = null, showAll = {};
 
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   function todayStr() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
   function parseDate(s) { var p = s.split("-"); return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)); }
   function dayDiff(s) { var p = s.split("-"); return Math.round((Date.UTC(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)) - BASE) / 86400000); }
   function chipLabel(s) { return parseDate(s).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }); }
-  function longLabel(s) {
-    var t = parseDate(s).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-    return t.charAt(0).toUpperCase() + t.slice(1);
-  }
+  function longLabel(s) { var t = parseDate(s).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); return t.charAt(0).toUpperCase() + t.slice(1); }
   function fmtNum(n) { return n === null || n === undefined ? "" : String(n).replace(".", ","); }
 
   // Séance prévue par le cycle : trois jours puis un repos, A et B en alternance
@@ -328,114 +293,85 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     if (pos === 3) return { rest: true, cycle: cycle + 1 };
     return { day: DAYS[pos], variant: cycle % 2 === 0 ? "A" : "B", cycle: cycle + 1 };
   }
-  function suggestText(sg) {
-    if (!sg) return "";
-    if (sg.rest) return "repos";
-    return PROGRAM[sg.day].label + " " + sg.variant;
-  }
+  function suggestText(sg) { if (!sg) return ""; return sg.rest ? "repos" : PROGRAM[sg.day].label + " " + sg.variant; }
 
-  function keyOf(day, variant, tag) { return day + variant + "_" + tag; }
-  function sessionsOf(doc) {
-    var out = [], seen = {};
-    if (!doc || !doc.data) return out;
-    Object.keys(doc.data).forEach(function (k) {
-      var m = /^(push|pull|legs)([AB])_/.exec(k);
-      if (m && !seen[m[1] + m[2]]) { seen[m[1] + m[2]] = 1; out.push(PROGRAM[m[1]].label + " " + m[2]); }
-    });
-    return out;
+  // Anciennes sauvegardes : les poids étaient rangés par place dans la séance, ils le sont désormais par exercice
+  var LEGACY = {};
+  DAYS.forEach(function (d) { ["A", "B"].forEach(function (v) { PROGRAM[d][v].slots.forEach(function (s) { LEGACY[d + v + "_" + s.tag] = s.def; }); }); });
+  function migrate(doc) {
+    if (!doc || !doc.data) return doc;
+    var nd = {};
+    Object.keys(doc.data).forEach(function (k) { var id = LEGACY[k] || k; if (!nd[id]) nd[id] = doc.data[k]; });
+    doc.data = nd;
+    if (!doc.sel) doc.sel = {};
+    return doc;
   }
+  function migrateAll(logs) { Object.keys(logs).forEach(function (d) { logs[d] = migrate(logs[d]); }); return logs; }
+
+  function slots() { return PROGRAM[state.day][state.variant].slots; }
+  function keyOf(slot) { return state.day + state.variant + "_" + slot.tag; }
+  function curId(slot) { return state.sel[keyOf(slot)] || slot.def; }
+  function hasData(doc) { return !!(doc && doc.data && Object.keys(doc.data).some(function (k) { return (doc.data[k] || []).some(function (s) { return s.kg !== null || s.reps !== null; }); })); }
+  function sessionLabel(doc) { return hasData(doc) && doc.last && PROGRAM[doc.last.day] ? PROGRAM[doc.last.day].label + " " + doc.last.variant : ""; }
 
   // Feuille de saisie de la date courante
   function loadSheet() {
     var doc = state.logs[state.date];
-    state.sheet = {};
+    state.sheet = {}; state.sel = {};
     if (doc && doc.data) {
       Object.keys(doc.data).forEach(function (k) {
         state.sheet[k] = (doc.data[k] || []).map(function (s) { return { kg: s.kg === undefined ? null : s.kg, reps: s.reps === undefined ? null : s.reps }; });
       });
     }
+    if (doc && doc.sel) Object.keys(doc.sel).forEach(function (k) { if (LIB[doc.sel[k]]) state.sel[k] = doc.sel[k]; });
     state.sheetVer = doc && doc.updatedAt ? doc.updatedAt : 0;
   }
-  function setsFor(key, n) {
-    var arr = state.sheet[key];
-    if (!arr) { arr = []; state.sheet[key] = arr; }
+  function setsFor(id, n) {
+    var arr = state.sheet[id];
+    if (!arr) { arr = []; state.sheet[id] = arr; }
     while (arr.length < n) arr.push({ kg: null, reps: null });
     return arr;
   }
   function buildDoc() {
-    var data = {}, any = false;
+    var data = {}, any = false, sel = {}, hasSel = false;
     Object.keys(state.sheet).forEach(function (k) {
       var arr = state.sheet[k].slice();
       while (arr.length && arr[arr.length - 1].kg === null && arr[arr.length - 1].reps === null) arr.pop();
       if (arr.length) { data[k] = arr; any = true; }
     });
-    if (!any) return null;
-    return { date: state.date, data: data, last: { day: state.day, variant: state.variant }, updatedAt: Date.now() };
+    Object.keys(state.sel).forEach(function (k) { if (state.sel[k]) { sel[k] = state.sel[k]; hasSel = true; } });
+    if (!any && !hasSel) return null;
+    return { date: state.date, data: data, sel: sel, last: { day: state.day, variant: state.variant }, updatedAt: Date.now() };
   }
 
-  // Stockage : db partagée si disponible, sinon cet appareil
-  var pending = {}, running = false, saveTimer = null, loadTimer = null;
-  function setStatus(txt, bad) {
-    var el = document.getElementById("status");
-    el.textContent = txt;
-    el.classList.toggle("bad", !!bad);
-  }
+  // Stockage sur le téléphone
+  var saveTimer = null;
+  function setStatus(txt, bad) { var el = document.getElementById("status"); el.textContent = txt; el.classList.toggle("bad", !!bad); }
   function lsRead() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function lsWrite(all) { try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch (e) {} }
-  async function persist(date, doc) {
-    if (db) {
-      var ref = db.doc("logs/" + date);
-      if (doc === null) await ref.delete(); else await ref.set(doc);
-    } else {
-      var all = lsRead();
-      if (doc === null) delete all[date]; else all[date] = doc;
-      lsWrite(all);
-    }
-  }
-  async function run() {
-    if (running) return;
-    running = true;
-    var failed = false;
-    while (true) {
-      var ks = Object.keys(pending);
-      if (!ks.length) break;
-      var d = ks[0], doc = pending[d];
-      delete pending[d];
-      try { await persist(d, doc); } catch (e) { failed = true; }
-    }
-    running = false;
-    if (failed) setStatus("Échec de l'enregistrement, réessaie", true);
-    else setStatus(db ? "Enregistré" : "Enregistré");
-  }
+  function lsWrite(all) { try { localStorage.setItem(LS_KEY, JSON.stringify(all)); return true; } catch (e) { return false; } }
   function queueWrite(date, doc) {
-    pending[date] = doc;
     if (doc === null) delete state.logs[date]; else state.logs[date] = doc;
     if (date === state.date && doc) state.sheetVer = doc.updatedAt;
-    run();
+    var all = lsRead();
+    if (doc === null) delete all[date]; else all[date] = doc;
+    if (lsWrite(all)) setStatus("Enregistré"); else setStatus("Échec de l'enregistrement, réessaie", true);
     renderDates();
   }
-  function flushNow() {
-    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; queueWrite(state.date, buildDoc()); }
-  }
+  function flushNow() { if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; queueWrite(state.date, buildDoc()); } }
   function scheduleSave() {
     setStatus("Modifié");
     if (saveTimer) clearTimeout(saveTimer);
     var date = state.date;
-    saveTimer = setTimeout(function () {
-      saveTimer = null;
-      if (date === state.date) queueWrite(state.date, buildDoc());
-    }, 700);
+    saveTimer = setTimeout(function () { saveTimer = null; if (date === state.date) queueWrite(state.date, buildDoc()); }, 600);
   }
 
-  // Rendu
+  // Rendu : dates
   var elDates = document.getElementById("dates");
   var elEx = document.getElementById("ex");
-
   function dateList() {
     var set = {};
     Object.keys(state.logs).forEach(function (d) { set[d] = 1; });
-    set[todayStr()] = 1;
-    set[state.date] = 1;
+    set[todayStr()] = 1; set[state.date] = 1;
     return Object.keys(set).sort().reverse();
   }
   function renderDates() {
@@ -446,21 +382,16 @@ main { display: grid; gap: 12px; padding-top: 16px; }
       b.type = "button";
       b.className = "chip" + (d === state.date ? " sel" : "");
       b.setAttribute("data-date", d);
-      var logged = sessionsOf(state.logs[d]);
-      var l1 = document.createElement("span");
-      l1.className = "d";
-      l1.textContent = d === today ? "Aujourd'hui" : chipLabel(d);
-      var l2 = document.createElement("span");
-      l2.className = "s";
-      if (logged.length) { b.classList.add("logged"); l2.textContent = logged.join(", "); }
+      var lab = sessionLabel(state.logs[d]);
+      var l1 = document.createElement("span"); l1.className = "d"; l1.textContent = d === today ? "Aujourd'hui" : chipLabel(d);
+      var l2 = document.createElement("span"); l2.className = "s";
+      if (lab) { b.classList.add("logged"); l2.textContent = lab; }
       else { var st = suggestText(suggest(d)); l2.textContent = st ? "prévu : " + st : "à remplir"; }
       b.appendChild(l1); b.appendChild(l2);
       elDates.appendChild(b);
     });
     var add = document.createElement("button");
-    add.type = "button";
-    add.className = "chip add";
-    add.setAttribute("data-other", "1");
+    add.type = "button"; add.className = "chip add"; add.setAttribute("data-other", "1");
     var a1 = document.createElement("span"); a1.className = "d"; a1.textContent = "Autre date";
     var a2 = document.createElement("span"); a2.className = "s"; a2.textContent = "calendrier";
     add.appendChild(a1); add.appendChild(a2);
@@ -468,7 +399,6 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     var sel = elDates.querySelector(".chip.sel");
     if (sel && sel.scrollIntoView) { try { sel.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (e) {} }
   }
-
   function renderToggles() {
     var days = document.querySelectorAll("#seg-day button");
     for (var i = 0; i < days.length; i++) days[i].setAttribute("aria-selected", days[i].getAttribute("data-day") === state.day ? "true" : "false");
@@ -478,133 +408,210 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   function renderHint() {
     var h = document.getElementById("hint");
     h.textContent = "";
-    var b = document.createElement("b");
-    b.textContent = longLabel(state.date);
-    h.appendChild(b);
+    var b = document.createElement("b"); b.textContent = longLabel(state.date); h.appendChild(b);
     var sg = suggest(state.date);
-    if (sg) {
-      var t = sg.rest ? " · prévu par le cycle : repos (cycle " + sg.cycle + ")" : " · prévu par le cycle : " + PROGRAM[sg.day].label + " " + sg.variant + " (cycle " + sg.cycle + ")";
-      h.appendChild(document.createTextNode(t));
+    if (sg) h.appendChild(document.createTextNode(sg.rest ? " · prévu par le cycle : repos (cycle " + sg.cycle + ")" : " · prévu par le cycle : " + PROGRAM[sg.day].label + " " + sg.variant + " (cycle " + sg.cycle + ")"));
+  }
+
+  // Historique par exercice
+  function prevFor(id) {
+    var dates = Object.keys(state.logs).filter(function (d) { return d < state.date && state.logs[d].data && state.logs[d].data[id]; }).sort().reverse();
+    for (var i = 0; i < dates.length; i++) {
+      var d = dates[i];
+      var parts = state.logs[d].data[id].filter(function (s) { return s.kg !== null || s.reps !== null; }).map(function (s) {
+        return (s.kg !== null ? fmtNum(s.kg) + " kg" : "") + (s.reps !== null ? (s.kg !== null ? " x " : "") + s.reps : "");
+      });
+      if (parts.length) return "Dernière fois, " + chipLabel(d) + " : " + parts.join(" · ");
     }
+    return "";
   }
-
-  function prevFor(key) {
-    var dates = Object.keys(state.logs).filter(function (d) { return d < state.date && state.logs[d].data && state.logs[d].data[key]; }).sort().reverse();
-    if (!dates.length) return "";
-    var d = dates[0];
-    var parts = state.logs[d].data[key].filter(function (s) { return s.kg !== null || s.reps !== null; }).map(function (s) {
-      return (s.kg !== null ? fmtNum(s.kg) + " kg" : "") + (s.reps !== null ? (s.kg !== null ? " x " : "") + s.reps : "");
-    });
-    if (!parts.length) return "";
-    return "Dernière fois, " + chipLabel(d) + " : " + parts.join(" · ");
-  }
-
-  function cardDone(ex, key) {
-    var arr = state.sheet[key] || [];
+  function slotDone(slot) {
+    var arr = state.sheet[curId(slot)] || [];
     var n = 0;
     for (var i = 0; i < arr.length; i++) if (arr[i].kg !== null) n++;
-    return n >= ex.sets;
+    return n >= 3;
   }
 
-  function buildCard(ex, key) {
+  // Bandeau visuel
+  function renderMap() {
+    var bar = document.getElementById("mapbar");
+    bar.textContent = "";
+    slots().forEach(function (slot, i) {
+      var g = GROUPS[slot.g];
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mp f-" + g.fam + (slotDone(slot) ? " done" : "");
+      b.setAttribute("data-slot", i);
+      b.setAttribute("aria-label", g.label + (slotDone(slot) ? ", fait" : ""));
+      var n = document.createElement("span"); n.className = "mn"; n.textContent = String(i + 1);
+      b.innerHTML = iconSvg(slot.g);
+      b.appendChild(n);
+      bar.appendChild(b);
+    });
+  }
+
+  // Un bloc muscle
+  function usedElsewhere(id, slot) {
+    var out = false;
+    slots().forEach(function (s) { if (s !== slot && curId(s) === id) out = true; });
+    return out;
+  }
+  function optionList(slot) {
+    var g = GROUPS[slot.g];
+    var main = [slot.def].concat(g.alts.filter(function (x) { return x !== slot.def; })).slice(0, 4);
+    var cur = curId(slot);
+    if (main.indexOf(cur) < 0) main.unshift(cur);
+    var rest = g.alts.concat(g.more).filter(function (x) { return main.indexOf(x) < 0; });
+    return { main: main, rest: rest };
+  }
+  function buildPicker(slot, key, rerender) {
+    var box = document.createElement("div"); box.className = "pick";
+    var h = document.createElement("h3"); h.textContent = "Remplacer par un exercice du même muscle"; box.appendChild(h);
+    var ol = optionList(slot);
+    function addOpt(id) {
+      var ex = LIB[id];
+      var b = document.createElement("button"); b.type = "button"; b.className = "opt" + (id === curId(slot) ? " cur" : "");
+      var left = document.createElement("span"); left.className = "on1";
+      var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = ex.name;
+      var sm = document.createElement("span"); sm.className = "sm";
+      var used = usedElsewhere(id, slot);
+      sm.textContent = used ? "déjà dans la séance" : (id === curId(slot) ? "choisi" : (id === slot.def ? "prévu au programme" : (ex.plan !== null ? ex.ref : "à tester, pars léger")));
+      left.appendChild(nm); left.appendChild(sm);
+      var eq = document.createElement("span"); eq.className = "eq"; eq.textContent = ex.equip;
+      b.appendChild(left); b.appendChild(eq);
+      if (used) b.disabled = true;
+      b.addEventListener("click", function () {
+        if (id === slot.def) delete state.sel[key]; else state.sel[key] = id;
+        openPick = null;
+        scheduleSave();
+        renderExercises();
+      });
+      box.appendChild(b);
+    }
+    ol.main.forEach(addOpt);
+    if (ol.rest.length) {
+      if (showAll[key]) { ol.rest.forEach(addOpt); }
+      else {
+        var more = document.createElement("button"); more.type = "button"; more.className = "btn more"; more.textContent = "Voir tout (" + ol.rest.length + " de plus)";
+        more.addEventListener("click", function () { showAll[key] = true; rerender(); });
+        box.appendChild(more);
+      }
+    }
+    return box;
+  }
+
+  function buildBlock(slot, idx) {
+    var key = keyOf(slot);
+    var g = GROUPS[slot.g];
+    var id = curId(slot);
+    var ex = LIB[id];
     var card = document.createElement("section");
-    card.className = "ex";
-    var head = document.createElement("div");
-    head.className = "ex-head";
-    var tag = document.createElement("span"); tag.className = "tag"; tag.textContent = ex.tag;
-    var tw = document.createElement("div"); tw.style.minWidth = "0";
+    card.className = "blk f-" + g.fam;
+    card.id = "blk" + idx;
+
+    var head = document.createElement("div"); head.className = "bk-head";
+    var ic = document.createElement("div"); ic.className = "ic"; ic.innerHTML = iconSvg(slot.g);
+    var tx = document.createElement("div"); tx.style.minWidth = "0";
+    var mg = document.createElement("div"); mg.className = "mg";
+    var mgt = document.createElement("span"); mgt.textContent = (idx + 1) + ". " + g.label; mg.appendChild(mgt);
+    var pill = document.createElement("span"); pill.className = "done-pill"; pill.textContent = "Fait"; pill.hidden = !slotDone(slot); mg.appendChild(pill);
     var nm = document.createElement("div"); nm.className = "ex-name"; nm.textContent = ex.name;
     var meta = document.createElement("div"); meta.className = "ex-meta";
     var ss = "";
-    if (/a$/.test(ex.tag)) ss = " · superset avec " + ex.tag.slice(0, -1) + "b";
-    else if (/b$/.test(ex.tag)) ss = " · superset avec " + ex.tag.slice(0, -1) + "a";
-    meta.textContent = ex.role + " · " + ex.scheme + " · repos " + ex.rest + ss;
-    tw.appendChild(nm); tw.appendChild(meta);
-    var pill = document.createElement("span"); pill.className = "done-pill"; pill.textContent = "Fait"; pill.hidden = true;
-    head.appendChild(tag); head.appendChild(tw); head.appendChild(pill);
-    card.appendChild(head);
-    var tc = TECH[ex.name];
-    if (tc) {
-      var det = document.createElement("details"); det.className = "tech";
-      var sm = document.createElement("summary"); sm.textContent = "Technique du mouvement";
-      var tb = document.createElement("div"); tb.className = "tb";
-      [["Placement", tc.p, ""], ["Mouvement", tc.m, ""], ["Erreurs fréquentes", tc.e, "er"]].forEach(function (r) {
-        var para = document.createElement("p"); if (r[2]) para.className = r[2];
-        var lb = document.createElement("b"); lb.textContent = r[0];
-        para.appendChild(lb); para.appendChild(document.createTextNode(r[1]));
-        tb.appendChild(para);
-      });
-      det.appendChild(sm); det.appendChild(tb); card.appendChild(det);
+    if (/a$/.test(slot.tag)) ss = " · superset avec le bloc suivant"; else if (/b$/.test(slot.tag)) ss = " · superset avec le bloc précédent";
+    meta.textContent = ex.equip + " · " + slot.scheme + " · repos " + slot.rest + ss;
+    tx.appendChild(mg); tx.appendChild(nm); tx.appendChild(meta);
+    if (id !== slot.def) {
+      var sw = document.createElement("div"); sw.className = "swapped"; sw.textContent = "À la place de : " + LIB[slot.def].name; tx.appendChild(sw);
     }
+    var acts = document.createElement("div"); acts.className = "acts";
+    var chg = document.createElement("button"); chg.type = "button"; chg.className = "btn" + (openPick === key ? " on" : "");
+    chg.textContent = openPick === key ? "Fermer" : "Changer d'exercice";
+    chg.addEventListener("click", function () { openPick = openPick === key ? null : key; renderExercises(); });
+    acts.appendChild(chg);
+    if (id !== slot.def) {
+      var back = document.createElement("button"); back.type = "button"; back.className = "btn"; back.textContent = "Revenir au prévu";
+      back.addEventListener("click", function () { delete state.sel[key]; scheduleSave(); renderExercises(); });
+      acts.appendChild(back);
+    }
+    tx.appendChild(acts);
+    head.appendChild(ic); head.appendChild(tx);
+    card.appendChild(head);
+
+    if (openPick === key) card.appendChild(buildPicker(slot, key, function () { renderExercises(); }));
+
+    var tc = ex.tech;
+    var det = document.createElement("details"); det.className = "tech";
+    var sm2 = document.createElement("summary"); sm2.textContent = "Technique du mouvement";
+    var tb = document.createElement("div"); tb.className = "tb";
+    [["Placement", tc.p, ""], ["Mouvement", tc.m, ""], ["Erreurs fréquentes", tc.e, "er"]].forEach(function (r) {
+      var para = document.createElement("p"); if (r[2]) para.className = r[2];
+      var lb = document.createElement("b"); lb.textContent = r[0];
+      para.appendChild(lb); para.appendChild(document.createTextNode(r[1]));
+      tb.appendChild(para);
+    });
+    det.appendChild(sm2); det.appendChild(tb); card.appendChild(det);
+
     if (ex.ref) { var r = document.createElement("div"); r.className = "ref"; r.textContent = ex.ref; card.appendChild(r); }
-    var pv = prevFor(key);
+    var pv = prevFor(id);
     if (pv) { var p = document.createElement("div"); p.className = "prev"; p.textContent = pv; card.appendChild(p); }
 
     var sets = document.createElement("div"); sets.className = "sets";
-    function refreshPill() { pill.hidden = !cardDone(ex, key); }
+    function refresh() { pill.hidden = !slotDone(slot); renderMap(); }
     function addRow(i) {
-      var arr = state.sheet[key];
+      var arr = state.sheet[id];
       var row = document.createElement("div"); row.className = "srow";
       var sl = document.createElement("span"); sl.className = "sl"; sl.textContent = "Série " + (i + 1);
       row.appendChild(sl);
       ["kg", "reps"].forEach(function (field) {
         var w = document.createElement("div"); w.className = "fld";
         var inp = document.createElement("input");
-        inp.type = "text";
-        inp.setAttribute("inputmode", "decimal");
-        inp.setAttribute("autocomplete", "off");
-        inp.id = key + "_" + i + "_" + field;
+        inp.type = "text"; inp.setAttribute("inputmode", "decimal"); inp.setAttribute("autocomplete", "off");
+        inp.id = "in_" + id + "_" + i + "_" + field;
         inp.setAttribute("aria-label", ex.name + ", série " + (i + 1) + ", " + (field === "kg" ? "poids en kilos" : "répétitions"));
-        inp.placeholder = field === "kg" ? (ex.plan !== null ? fmtNum(ex.plan) : "kg") : (ex.rp || "reps");
+        inp.placeholder = field === "kg" ? (ex.plan !== null ? fmtNum(ex.plan) : "kg") : (slot.rp || "reps");
         inp.value = fmtNum(arr[i][field]);
         inp.addEventListener("input", function () {
           var v = inp.value.replace(",", ".").trim();
           var n = v === "" ? null : parseFloat(v);
           if (n !== null && isNaN(n)) n = null;
-          state.sheet[key][i][field] = n;
-          refreshPill();
-          scheduleSave();
+          state.sheet[id][i][field] = n;
+          refresh(); scheduleSave();
         });
         var u = document.createElement("i"); u.textContent = field === "kg" ? "kg" : "rép";
-        w.appendChild(inp); w.appendChild(u);
-        row.appendChild(w);
+        w.appendChild(inp); w.appendChild(u); row.appendChild(w);
       });
       sets.appendChild(row);
     }
-    var count = Math.max(ex.sets, setsFor(key, ex.sets).length);
+    var count = Math.max(3, setsFor(id, 3).length);
     for (var i = 0; i < count; i++) addRow(i);
     card.appendChild(sets);
-    var more = document.createElement("button");
-    more.type = "button"; more.className = "btn"; more.textContent = "Ajouter une série";
+    var more = document.createElement("button"); more.type = "button"; more.className = "btn more"; more.textContent = "Ajouter une série";
     more.addEventListener("click", function () {
-      var arr = setsFor(key, 0);
+      var arr = setsFor(id, 0);
       if (arr.length >= 8) return;
       arr.push({ kg: null, reps: null });
       addRow(arr.length - 1);
     });
     card.appendChild(more);
-    refreshPill();
     return card;
   }
 
   function renderExercises() {
     elEx.textContent = "";
-    var prog = PROGRAM[state.day][state.variant];
-    document.getElementById("warm").textContent = prog.warm;
-    prog.ex.forEach(function (ex) { elEx.appendChild(buildCard(ex, keyOf(state.day, state.variant, ex.tag))); });
+    document.getElementById("warm").textContent = PROGRAM[state.day][state.variant].warm;
+    slots().forEach(function (slot, i) { elEx.appendChild(buildBlock(slot, i)); });
+    renderMap();
   }
   function renderAll() { renderDates(); renderToggles(); renderHint(); renderExercises(); }
 
   function selectDate(d) {
     flushNow();
-    state.date = d;
+    state.date = d; openPick = null; showAll = {};
     loadSheet();
     var doc = state.logs[d];
     if (doc && doc.last && PROGRAM[doc.last.day]) { state.day = doc.last.day; state.variant = doc.last.variant; }
-    else {
-      var sg = suggest(d);
-      if (sg && !sg.rest) { state.day = sg.day; state.variant = sg.variant; }
-    }
+    else { var sg = suggest(d); if (sg && !sg.rest) { state.day = sg.day; state.variant = sg.variant; } }
     renderAll();
   }
 
@@ -626,14 +633,18 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   document.getElementById("seg-day").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest("button[data-day]") : null;
     if (!b) return;
-    state.day = b.getAttribute("data-day");
-    renderToggles(); renderExercises();
+    flushNow(); state.day = b.getAttribute("data-day"); openPick = null; renderToggles(); renderExercises();
   });
   document.getElementById("seg-var").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest("button[data-var]") : null;
     if (!b) return;
-    state.variant = b.getAttribute("data-var");
-    renderToggles(); renderExercises();
+    flushNow(); state.variant = b.getAttribute("data-var"); openPick = null; renderToggles(); renderExercises();
+  });
+  document.getElementById("mapbar").addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("button[data-slot]") : null;
+    if (!b) return;
+    var el = document.getElementById("blk" + b.getAttribute("data-slot"));
+    if (el && el.scrollIntoView) { try { el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (x) { el.scrollIntoView(); } }
   });
   document.addEventListener("visibilitychange", function () { if (document.hidden) flushNow(); });
   window.addEventListener("pagehide", flushNow);
@@ -642,15 +653,15 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   function msg(t, bad) { var m = document.getElementById("b-msg"); m.textContent = t; m.classList.toggle("bad", !!bad); }
   function exportText() {
     flushNow();
-    return JSON.stringify({ app: "journal-ppl", version: 1, exportedAt: new Date().toISOString(), logs: state.logs }, null, 1);
+    return JSON.stringify({ app: "journal-ppl", version: 2, exportedAt: new Date().toISOString(), logs: state.logs }, null, 1);
   }
   document.getElementById("b-copy").addEventListener("click", function () {
     var t = exportText();
     var ta = document.getElementById("b-text");
     ta.value = t;
     var done = function () { msg("Sauvegarde copiée (" + Object.keys(state.logs).length + " jour(s))."); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { ta.focus(); ta.select(); msg("Texte sélectionné : copie-le à la main."); });
-    else { ta.focus(); ta.select(); msg("Texte sélectionné : copie-le à la main."); }
+    var manual = function () { ta.focus(); ta.select(); msg("Texte sélectionné : copie-le à la main."); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, manual); else manual();
   });
   document.getElementById("b-share").addEventListener("click", function () {
     var t = exportText();
@@ -671,7 +682,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     flushNow();
     var n = 0;
     Object.keys(obj.logs).forEach(function (d) {
-      var inc = obj.logs[d];
+      var inc = migrate(obj.logs[d]);
       if (!inc || !inc.data || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
       var cur = state.logs[d];
       if (!cur || (inc.updatedAt || 0) > (cur.updatedAt || 0)) { state.logs[d] = inc; n++; }
@@ -682,27 +693,19 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     msg(n + " jour(s) importé(s) ou mis à jour.");
   });
 
-  // Départ : séance prévue pour aujourd'hui, puis branchement du stockage
+  // Départ
   (function init() {
+    state.logs = migrateAll(lsRead());
     var sg = suggest(state.date);
     if (sg && !sg.rest) { state.day = sg.day; state.variant = sg.variant; }
     loadSheet();
+    var cur = state.logs[state.date];
+    if (cur && cur.last && PROGRAM[cur.last.day]) { state.day = cur.last.day; state.variant = cur.last.variant; }
+    setStatus("Sur ce téléphone");
     renderAll();
-
-    useLocal();
-
-    function useLocal() {
-      state.logs = lsRead();
-      setStatus("Sur ce téléphone");
-      loadSheet();
-      var cur = state.logs[state.date];
-      if (cur && cur.last && PROGRAM[cur.last.day]) { state.day = cur.last.day; state.variant = cur.last.variant; }
-      renderAll();
-    }
   })();
 })();
 </script>
-
 <script>
 if (navigator.storage && navigator.storage.persist) { try { navigator.storage.persist(); } catch (e) {} }
 if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); }); }
