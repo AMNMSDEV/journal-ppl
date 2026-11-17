@@ -177,6 +177,29 @@ main { display: grid; gap: 12px; padding-top: 16px; }
 .fld i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted); pointer-events: none; }
 .btn.more { justify-self: start; }
 
+/* Lignes de séance : balayage et menu */
+.swrap { position: relative; border-radius: 12px; overflow: hidden; }
+.sdel { position: absolute; top: 0; right: 0; bottom: 0; width: 92px; border: 0; background: var(--bad, #c0392b); color: #fff; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; opacity: 0; }
+.swrap.reveal .sdel { opacity: 1; }
+.sfront { position: relative; display: flex; align-items: stretch; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; transform: translateX(0); transition: transform .18s ease; touch-action: pan-y; }
+.sfront.drag { transition: none; }
+.sfront .hmain { flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 58px; padding: 8px 4px 8px 14px; border: 0; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.sfront .hmain .l { display: grid; min-width: 0; }
+.sfront .hmain .a { font-weight: 600; }
+.sfront .hmain .b { font-size: 12px; color: var(--muted); }
+.sfront .hmain .r { flex: none; font-size: 12px; color: var(--ok); font-weight: 600; }
+.sfront .dots { flex: none; width: 44px; border: 0; background: transparent; color: var(--muted); cursor: pointer; display: grid; place-items: center; border-radius: 0 12px 12px 0; }
+.sfront .dots svg { width: 20px; height: 20px; fill: currentColor; }
+.scrim { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.4); display: flex; align-items: flex-end; justify-content: center; }
+.scrim[hidden] { display: none; }
+.sheet { width: 100%; max-width: 640px; background: var(--surface); border-radius: 16px 16px 0 0; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px; }
+.sheet h3 { margin: 0 0 4px; font-family: var(--font-display); font-size: 16px; }
+.sheet button { min-height: 50px; border-radius: 12px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+.sheet button.danger { color: var(--bad, #c0392b); }
+.toast { position: fixed; left: 16px; right: 16px; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); z-index: 30; max-width: 608px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--fg); color: var(--bg); font-size: 14px; }
+.toast[hidden] { display: none; }
+.toast button { border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; min-height: 36px; }
+
 /* Onglets */
 .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
 .tabs[hidden] { display: none; }
@@ -315,7 +338,7 @@ main.hastabs { padding-bottom: 84px; }
         </div>
         <textarea id="b-text" placeholder="Pour importer : colle ici la sauvegarde copiée, puis appuie sur Importer." spellcheck="false"></textarea>
         <div class="msg" id="b-msg" role="status"></div>
-        <p>Version de l'application : 10 (onglets)</p>
+        <p>Version de l'application : 10 (modifier et supprimer)</p>
       </section>
     </section>
 
@@ -357,6 +380,15 @@ main.hastabs { padding-bottom: 84px; }
       <button type="button" class="cta" id="s-end">Terminer la séance</button>
     </section>
   </main>
+  <div class="scrim" id="menu" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Actions sur la séance">
+      <h3 id="menu-t"></h3>
+      <button type="button" id="menu-edit">Modifier la séance</button>
+      <button type="button" class="danger" id="menu-del">Supprimer la séance</button>
+      <button type="button" id="menu-cancel">Fermer</button>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" hidden><span id="toast-t"></span><button type="button" id="toast-undo">Annuler</button></div>
   <nav class="tabs" id="tabs" aria-label="Navigation">
     <button type="button" data-tab="home" aria-selected="true">Séances</button>
     <button type="button" data-tab="suivi" aria-selected="false">Suivi</button>
@@ -555,6 +587,70 @@ main.hastabs { padding-bottom: 84px; }
     if (t === "suivi") renderSuivi(); else if (t === "params") renderGyms(); else renderHome();
     showView(t);
   }
+  // Modifier, supprimer, balayer
+  var swipeOpen = null, swipedAt = 0, menuDate = null, undoTimer = null, undoDoc = null;
+  function editSession(d) {
+    var doc = state.logs[d];
+    if (doc && doc.last && PROGRAM[doc.last.day]) openSession(d, doc.last.day, doc.last.variant);
+  }
+  function closeSwipe() { if (swipeOpen) { swipeOpen.classList.remove("drag"); swipeOpen.style.transform = ""; var w = swipeOpen.parentNode; swipeOpen = null; setTimeout(function () { if (w) w.classList.remove("reveal"); }, 200); } }
+  function attachSwipe(el) {
+    var W = 92, x0 = 0, y0 = 0, dx = 0, mode = 0, base = 0;
+    el.addEventListener("touchstart", function (e) {
+      var t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; dx = 0; mode = 0;
+      base = swipeOpen === el ? -W : 0;
+      if (swipeOpen && swipeOpen !== el) closeSwipe();
+    }, { passive: true });
+    el.addEventListener("touchmove", function (e) {
+      var t = e.touches[0], mx = t.clientX - x0, my = t.clientY - y0;
+      if (mode === 0) {
+        if (Math.abs(mx) > 8 && Math.abs(mx) > Math.abs(my)) { mode = 1; el.classList.add("drag"); el.parentNode.classList.add("reveal"); }
+        else if (Math.abs(my) > 8) { mode = 2; }
+      }
+      if (mode !== 1) return;
+      dx = mx;
+      var v = Math.max(-W, Math.min(0, base + dx));
+      el.style.transform = "translateX(" + v + "px)";
+      if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+    function end() {
+      if (mode !== 1) return;
+      el.classList.remove("drag");
+      var v = base + dx;
+      swipedAt = Date.now();
+      if (v < -W / 2) { el.style.transform = "translateX(" + (-W) + "px)"; swipeOpen = el; }
+      else { el.style.transform = ""; if (swipeOpen === el) swipeOpen = null; setTimeout(function () { if (!swipeOpen || swipeOpen !== el) el.parentNode.classList.remove("reveal"); }, 200); }
+    }
+    el.addEventListener("touchend", end);
+    el.addEventListener("touchcancel", end);
+  }
+  function sessionLabel(d) {
+    var doc = state.logs[d];
+    return longLabel(d) + " · " + (doc && doc.last && PROGRAM[doc.last.day] ? PROGRAM[doc.last.day].label + " " + doc.last.variant : "Séance");
+  }
+  function openMenu(d) { menuDate = d; document.getElementById("menu-t").textContent = sessionLabel(d); document.getElementById("menu").hidden = false; }
+  function closeMenu() { document.getElementById("menu").hidden = true; menuDate = null; }
+  function hideToast() { document.getElementById("toast").hidden = true; if (undoTimer) { clearTimeout(undoTimer); undoTimer = null; } undoDoc = null; }
+  function deleteSession(d) {
+    var doc = state.logs[d]; if (!doc) return;
+    closeSwipe();
+    var label = sessionLabel(d);
+    if (state.date === d) { if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; } state.timer = null; }
+    queueWrite(d, null);
+    undoDoc = { date: d, doc: doc };
+    document.getElementById("toast-t").textContent = "Séance supprimée : " + label;
+    document.getElementById("toast").hidden = false;
+    if (undoTimer) clearTimeout(undoTimer);
+    undoTimer = setTimeout(hideToast, 7000);
+  }
+  function undoDelete() {
+    if (!undoDoc) return;
+    var u = undoDoc; hideToast();
+    if (!state.logs[u.date]) { u.doc.updatedAt = Date.now(); queueWrite(u.date, u.doc); }
+  }
+  document.addEventListener("click", function (e) {
+    if (swipeOpen && !(e.target.closest && e.target.closest(".swrap"))) closeSwipe();
+  });
   function renderHome() {
     var today = todayStr();
     var sg = suggest(today);
@@ -585,7 +681,11 @@ main.hastabs { padding-bottom: 84px; }
     }
     dates.forEach(function (d) {
       var doc = state.logs[d];
-      var b = document.createElement("button"); b.type = "button"; b.className = "hrow";
+      var wrap = document.createElement("div"); wrap.className = "swrap";
+      var del = document.createElement("button"); del.type = "button"; del.className = "sdel"; del.textContent = "Supprimer";
+      del.addEventListener("click", function () { deleteSession(d); });
+      var front = document.createElement("div"); front.className = "sfront";
+      var b = document.createElement("button"); b.type = "button"; b.className = "hmain";
       var l = document.createElement("span"); l.className = "l";
       var a = document.createElement("span"); a.className = "a"; a.textContent = longLabel(d);
       var lab = doc.last && PROGRAM[doc.last.day] ? PROGRAM[doc.last.day].label + " " + doc.last.variant : "Séance";
@@ -600,9 +700,17 @@ main.hastabs { padding-bottom: 84px; }
       r.textContent = txt;
       b.appendChild(l); b.appendChild(r);
       b.addEventListener("click", function () {
-        if (doc.last && PROGRAM[doc.last.day]) openSession(d, doc.last.day, doc.last.variant);
+        if (swipeOpen) { closeSwipe(); return; }
+        if (swipedAt && Date.now() - swipedAt < 400) return;
+        editSession(d);
       });
-      hist.appendChild(b);
+      var dots = document.createElement("button"); dots.type = "button"; dots.className = "dots"; dots.setAttribute("aria-label", "Actions sur la séance du " + longLabel(d));
+      dots.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>';
+      dots.addEventListener("click", function () { closeSwipe(); openMenu(d); });
+      front.appendChild(b); front.appendChild(dots);
+      attachSwipe(front);
+      wrap.appendChild(del); wrap.appendChild(front);
+      hist.appendChild(wrap);
     });
   }
   var WKEY = "journal-ppl-weights";
@@ -1083,6 +1191,11 @@ main.hastabs { padding-bottom: 84px; }
   document.getElementById("s-gym").addEventListener("change", function () {
     state.gym = this.value; scheduleSave(); renderExercises();
   });
+  document.getElementById("menu-cancel").addEventListener("click", closeMenu);
+  document.getElementById("menu").addEventListener("click", function (e) { if (e.target === this) closeMenu(); });
+  document.getElementById("menu-edit").addEventListener("click", function () { var d = menuDate; closeMenu(); if (d) editSession(d); });
+  document.getElementById("menu-del").addEventListener("click", function () { var d = menuDate; closeMenu(); if (d) deleteSession(d); });
+  document.getElementById("toast-undo").addEventListener("click", undoDelete);
   document.getElementById("tabs").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest("button[data-tab]") : null;
     if (b) gotoTab(b.getAttribute("data-tab"));
