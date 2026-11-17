@@ -568,7 +568,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     }
     goHome();
   }
-  setInterval(function () { if (state.view === "sess") renderChrono(); }, 1000);
+  setInterval(function () { if (state.view === "sess" && state.timer && !state.timer.end) renderChrono(); }, 250);
 
   // Historique par exercice
   function prevFor(id) {
