@@ -177,6 +177,15 @@ main { display: grid; gap: 12px; padding-top: 16px; }
 .fld i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted); pointer-events: none; }
 .btn.more { justify-self: start; }
 
+/* Chrono de séance */
+.chrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-top: 4px; }
+.chrow .chs { font-size: 12px; color: var(--muted); }
+.chrow .chv { font-family: var(--font-display); font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.chrow.run .chv { color: var(--accent); }
+.chrow.run .chs::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 6px; }
+.btn.wide { width: 100%; min-height: 48px; }
+.setacts { display: grid; gap: 8px; }
+
 /* Accueil */
 .tl { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .back { font: inherit; font-size: 14px; font-weight: 600; color: var(--accent); background: transparent; border: 0; padding: 6px 10px 6px 0; min-height: 40px; cursor: pointer; white-space: nowrap; }
@@ -220,6 +229,10 @@ main { display: grid; gap: 12px; padding-top: 16px; }
         </div>
         <span class="status" id="status"></span>
       </div>
+      <div class="chrow" id="chrow" hidden>
+        <span class="chs" id="chs"></span>
+        <span class="chv" id="chv">00:00</span>
+      </div>
     </div>
   </header>
 
@@ -239,7 +252,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
         </div>
         <textarea id="b-text" placeholder="Pour importer : colle ici la sauvegarde copiée, puis appuie sur Importer." spellcheck="false"></textarea>
         <div class="msg" id="b-msg" role="status"></div>
-        <p>Version de l'application : 6 (accueil et création de séance)</p>
+        <p>Version de l'application : 7 (chrono de séance, séries à volonté)</p>
       </section>
     </section>
 
@@ -318,7 +331,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   }
 
   // État
-  var state = { date: todayStr(), day: "push", variant: "A", logs: {}, sheet: {}, sel: {}, sheetVer: 0 };
+  var state = { date: todayStr(), day: "push", variant: "A", logs: {}, sheet: {}, sel: {}, sheetVer: 0, timer: null, view: "home" };
   var openPick = null, showAll = {};
 
   function pad(n) { return (n < 10 ? "0" : "") + n; }
@@ -369,6 +382,17 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     }
     if (doc && doc.sel) Object.keys(doc.sel).forEach(function (k) { if (LIB[doc.sel[k]]) state.sel[k] = doc.sel[k]; });
     state.sheetVer = doc && doc.updatedAt ? doc.updatedAt : 0;
+    state.timer = null;
+    if (doc && doc.t && doc.t.start) {
+      state.timer = { start: doc.t.start, end: doc.t.end || null };
+      // séance restée ouverte depuis longtemps : on la clôt à la dernière sauvegarde
+      if (!state.timer.end && Date.now() - state.timer.start > 4 * 3600 * 1000) state.timer.end = Math.max(state.timer.start, doc.updatedAt || state.timer.start);
+    }
+  }
+  function hasWork() {
+    var any = Object.keys(state.sel).some(function (k) { return !!state.sel[k]; });
+    Object.keys(state.sheet).forEach(function (k) { if (state.sheet[k].some(function (s) { return s.kg !== null || s.reps !== null; })) any = true; });
+    return any;
   }
   function setsFor(id, n) {
     var arr = state.sheet[id];
@@ -384,8 +408,10 @@ main { display: grid; gap: 12px; padding-top: 16px; }
       if (arr.length) { data[k] = arr; any = true; }
     });
     Object.keys(state.sel).forEach(function (k) { if (state.sel[k]) { sel[k] = state.sel[k]; hasSel = true; } });
-    if (!any && !hasSel) return null;
-    return { date: state.date, data: data, sel: sel, last: { day: state.day, variant: state.variant }, updatedAt: Date.now() };
+    if (!any && !hasSel && !state.timer) return null;
+    var doc = { date: state.date, data: data, sel: sel, last: { day: state.day, variant: state.variant }, updatedAt: Date.now() };
+    if (state.timer) doc.t = { start: state.timer.start, end: state.timer.end };
+    return doc;
   }
 
   // Stockage sur le téléphone
@@ -436,18 +462,18 @@ main { display: grid; gap: 12px; padding-top: 16px; }
       box.appendChild(t);
     } else {
       var cur = state.logs[today];
-      var again = cur && cur.last && cur.last.day === sg.day && cur.last.variant === sg.variant && (hasData(cur) || (cur.sel && Object.keys(cur.sel).length));
+      var again = cur && cur.last && cur.last.day === sg.day && cur.last.variant === sg.variant && (hasData(cur) || (cur.sel && Object.keys(cur.sel).length) || (cur.t && cur.t.start));
       t.textContent = "Prévu aujourd'hui : " + PROGRAM[sg.day].label + " " + sg.variant + " (cycle " + sg.cycle + ")";
       var go = document.createElement("button"); go.type = "button"; go.className = "btn";
       go.textContent = (again ? "Reprendre " : "Commencer ") + PROGRAM[sg.day].label + " " + sg.variant;
-      go.addEventListener("click", function () { openSession(today, sg.day, sg.variant); });
+      go.addEventListener("click", function () { openSession(today, sg.day, sg.variant, true); });
       box.appendChild(t); box.appendChild(go);
     }
     var hist = document.getElementById("hist");
     hist.textContent = "";
     var dates = Object.keys(state.logs).filter(function (d) {
       var doc = state.logs[d];
-      return doc && (hasData(doc) || (doc.sel && Object.keys(doc.sel).length));
+      return doc && (hasData(doc) || (doc.sel && Object.keys(doc.sel).length) || (doc.t && doc.t.start));
     }).sort().reverse();
     if (!dates.length) {
       var em = document.createElement("p"); em.className = "empty"; em.textContent = "Aucune séance enregistrée pour l'instant. Appuie sur Créer une séance.";
@@ -462,7 +488,12 @@ main { display: grid; gap: 12px; padding-top: 16px; }
       var bb = document.createElement("span"); bb.className = "b"; bb.textContent = lab;
       l.appendChild(a); l.appendChild(bb);
       var n = exCount(doc);
-      var r = document.createElement("span"); r.className = "r"; r.textContent = n ? n + (n > 1 ? " exercices" : " exercice") : "commencée";
+      var r = document.createElement("span"); r.className = "r";
+      var running = doc.t && doc.t.start && !doc.t.end && Date.now() - doc.t.start <= 4 * 3600 * 1000;
+      var txt = n ? n + (n > 1 ? " exercices" : " exercice") : "commencée";
+      if (doc.t && doc.t.start && doc.t.end) txt += " · " + Math.max(1, Math.round((doc.t.end - doc.t.start) / 60000)) + " min";
+      if (running) txt = "en cours";
+      r.textContent = txt;
       b.appendChild(l); b.appendChild(r);
       b.addEventListener("click", function () {
         if (doc.last && PROGRAM[doc.last.day]) openSession(d, doc.last.day, doc.last.variant);
@@ -493,13 +524,48 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     var sg = suggest(state.date);
     if (sg) h.appendChild(document.createTextNode(sg.rest ? " · prévu par le cycle : repos (cycle " + sg.cycle + ")" : " · prévu par le cycle : " + PROGRAM[sg.day].label + " " + sg.variant + " (cycle " + sg.cycle + ")"));
   }
-  function openSession(date, day, variant) {
+  function fmtDur(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+    return (h ? h + ":" : "") + pad(m) + ":" + pad(x);
+  }
+  function renderChrono() {
+    var row = document.getElementById("chrow");
+    if (state.view !== "sess" || !state.timer) { row.hidden = true; return; }
+    row.hidden = false;
+    var t = state.timer, run = !t.end;
+    document.getElementById("chv").textContent = fmtDur((t.end || Date.now()) - t.start);
+    document.getElementById("chs").textContent = run ? "Séance en cours" : "Séance terminée";
+    row.classList.toggle("run", run);
+  }
+  function startTimer() { state.timer = { start: Date.now(), end: null }; queueWrite(state.date, buildDoc()); }
+  function openSession(date, day, variant, fresh) {
     flushNow();
     state.date = date; state.day = day; state.variant = variant; openPick = null; showAll = {};
     loadSheet();
-    renderHint(); renderExercises(); showView("sess");
+    if (fresh && !state.timer && date === todayStr()) startTimer();
+    renderHint(); renderExercises(); showView("sess"); renderChrono();
+    document.getElementById("s-end").textContent = state.timer && !state.timer.end ? "Terminer la séance" : "Retour à l'accueil";
   }
-  function goHome() { flushNow(); openPick = null; renderHome(); showView("home"); }
+  function goHome() { flushNow(); openPick = null; renderHome(); showView("home"); renderChrono(); }
+  // Retour sans avoir rien fait : le chrono lancé par erreur est abandonné
+  function leaveSession() {
+    if (state.view === "sess" && state.timer && !state.timer.end && !hasWork()) {
+      state.timer = null;
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+      queueWrite(state.date, buildDoc());
+    }
+    goHome();
+  }
+  // Terminer : le chrono s'arrête
+  function finishSession() {
+    if (state.timer && !state.timer.end) {
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+      if (hasWork()) state.timer.end = Date.now(); else state.timer = null;
+      queueWrite(state.date, buildDoc());
+    }
+    goHome();
+  }
+  setInterval(function () { if (state.view === "sess") renderChrono(); }, 1000);
 
   // Historique par exercice
   function prevFor(id) {
@@ -645,43 +711,72 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     if (pv) { var p = document.createElement("div"); p.className = "prev"; p.textContent = pv; card.appendChild(p); }
 
     var sets = document.createElement("div"); sets.className = "sets";
+    var rows = [], ins = [];
+    var MAXSETS = 12;
+    function basePh(field) { return field === "kg" ? (ex.plan !== null ? fmtNum(ex.plan) : "kg") : (slot.rp || "reps"); }
+    // Les séries suivantes proposent la valeur de la série d'avant
+    function updPh() {
+      var arr = state.sheet[id];
+      for (var k = 0; k < ins.length; k++) {
+        ["kg", "reps"].forEach(function (f) {
+          var prev = k > 0 ? arr[k - 1][f] : null;
+          ins[k][f].placeholder = prev !== null && prev !== undefined ? fmtNum(prev) : basePh(f);
+        });
+      }
+    }
     function refresh() { pill.hidden = !slotDone(slot); renderMap(); }
     function addRow(i) {
       var arr = state.sheet[id];
       var row = document.createElement("div"); row.className = "srow";
       var sl = document.createElement("span"); sl.className = "sl"; sl.textContent = "Série " + (i + 1);
       row.appendChild(sl);
+      var pair = {};
       ["kg", "reps"].forEach(function (field) {
         var w = document.createElement("div"); w.className = "fld";
         var inp = document.createElement("input");
         inp.type = "text"; inp.setAttribute("inputmode", "decimal"); inp.setAttribute("autocomplete", "off");
         inp.id = "in_" + id + "_" + i + "_" + field;
         inp.setAttribute("aria-label", ex.name + ", série " + (i + 1) + ", " + (field === "kg" ? "poids en kilos" : "répétitions"));
-        inp.placeholder = field === "kg" ? (ex.plan !== null ? fmtNum(ex.plan) : "kg") : (slot.rp || "reps");
         inp.value = fmtNum(arr[i][field]);
         inp.addEventListener("input", function () {
           var v = inp.value.replace(",", ".").trim();
           var n = v === "" ? null : parseFloat(v);
           if (n !== null && isNaN(n)) n = null;
           state.sheet[id][i][field] = n;
-          refresh(); scheduleSave();
+          updPh(); refresh(); scheduleSave();
         });
         var u = document.createElement("i"); u.textContent = field === "kg" ? "kg" : "rép";
         w.appendChild(inp); w.appendChild(u); row.appendChild(w);
+        pair[field] = inp;
       });
+      ins.push(pair); rows.push(row);
       sets.appendChild(row);
     }
     var count = Math.max(3, setsFor(id, 3).length);
     for (var i = 0; i < count; i++) addRow(i);
+    updPh();
     card.appendChild(sets);
-    var more = document.createElement("button"); more.type = "button"; more.className = "btn more"; more.textContent = "Ajouter une série";
+
+    var sa = document.createElement("div"); sa.className = "setacts";
+    var more = document.createElement("button"); more.type = "button"; more.className = "btn wide"; more.textContent = "+ Ajouter une série";
+    var less = document.createElement("button"); less.type = "button"; less.className = "btn"; less.textContent = "Retirer la dernière série";
+    function upd2() { less.hidden = rows.length <= 3; more.hidden = rows.length >= MAXSETS; }
     more.addEventListener("click", function () {
       var arr = setsFor(id, 0);
-      if (arr.length >= 8) return;
+      if (arr.length >= MAXSETS) return;
       arr.push({ kg: null, reps: null });
-      addRow(arr.length - 1);
+      addRow(arr.length - 1); updPh(); upd2(); scheduleSave();
+      try { ins[ins.length - 1].kg.focus(); } catch (e) {}
     });
-    card.appendChild(more);
+    less.addEventListener("click", function () {
+      if (rows.length <= 3) return;
+      var r = rows.pop(); ins.pop(); r.remove();
+      state.sheet[id].pop();
+      upd2(); refresh(); scheduleSave();
+    });
+    sa.appendChild(more); sa.appendChild(less);
+    upd2();
+    card.appendChild(sa);
     return card;
   }
 
@@ -694,8 +789,8 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   function renderAll() { if (state.view === "sess") { renderHint(); renderExercises(); } else renderHome(); }
 
   document.getElementById("b-new").addEventListener("click", openNew);
-  document.getElementById("back").addEventListener("click", goHome);
-  document.getElementById("s-end").addEventListener("click", goHome);
+  document.getElementById("back").addEventListener("click", leaveSession);
+  document.getElementById("s-end").addEventListener("click", finishSession);
   document.getElementById("n-cancel").addEventListener("click", goHome);
   document.getElementById("n-day").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest("button[data-day]") : null;
@@ -709,7 +804,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   document.getElementById("n-go").addEventListener("click", function () {
     var d = document.getElementById("n-date").value;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) d = todayStr();
-    openSession(d, nsel.day, nsel.variant);
+    openSession(d, nsel.day, nsel.variant, true);
   });
   document.getElementById("mapbar").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest("button[data-slot]") : null;
