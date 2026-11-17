@@ -315,6 +315,10 @@ main.hastabs { padding-bottom: 84px; }
 
     <section id="v-suivi" style="display:grid;gap:12px" hidden>
       <div class="kpis" id="kpis"></div>
+      <h2 class="sec">Indice de force</h2>
+      <div class="kpis" id="ix-kpis"></div>
+      <div id="ix-chart"></div>
+      <p class="note" id="ix-note"></p>
       <h2 class="sec">Poids de corps</h2>
       <div class="wform">
         <input type="text" inputmode="decimal" id="w-in" placeholder="Poids du jour en kg" autocomplete="off" aria-label="Poids du jour en kilogrammes">
@@ -345,7 +349,7 @@ main.hastabs { padding-bottom: 84px; }
         </div>
         <textarea id="b-text" placeholder="Pour importer : colle ici la sauvegarde copiée, puis appuie sur Importer." spellcheck="false"></textarea>
         <div class="msg" id="b-msg" role="status"></div>
-        <p>Version de l'application : 10 (salles modifiables)</p>
+        <p>Version de l'application : 10 (indice de force)</p>
       </section>
     </section>
 
@@ -763,6 +767,64 @@ main.hastabs { padding-bottom: 84px; }
       row.appendChild(a); row.appendChild(v); box.appendChild(row);
     });
   }
+  // Indice de force : chaque exercice est comparé à lui-même (même salle pour les machines),
+  // puis on fait la moyenne des progressions. Base 100 = premières séances.
+  var FAM = (function () { var m = {}; Object.keys(GROUPS).forEach(function (g) { (GROUPS[g].alts || []).concat(GROUPS[g].more || []).forEach(function (id) { if (!m[id]) m[id] = GROUPS[g].fam; }); }); return m; })();
+  function strengthSeries() {
+    var ser = {};
+    Object.keys(state.logs).sort().forEach(function (d) {
+      var doc = state.logs[d]; if (!doc || !doc.data) return;
+      Object.keys(doc.data).forEach(function (id) {
+        if (!LIB[id]) return;
+        var top = 0;
+        (doc.data[id] || []).forEach(function (st) { if (st.kg !== null && st.reps !== null && st.reps > 0 && st.reps <= 12 && st.kg > 0) top = Math.max(top, est1rm(st.kg, st.reps)); });
+        if (!top) return;
+        var key = id + (SCOPED[LIB[id].equip] ? "|" + gymOf(doc) : "");
+        (ser[key] = ser[key] || { id: id, pts: [] }).pts.push({ d: d, v: top });
+      });
+    });
+    return ser;
+  }
+  function indexAt(ser, date, fam) {
+    var sum = 0, n = 0;
+    Object.keys(ser).forEach(function (k) {
+      var sr = ser[k]; if (fam && FAM[sr.id] !== fam) return;
+      var pts = sr.pts.filter(function (x) { return x.d <= date; });
+      if (pts.length < 2) return;
+      var base = sr.pts[0].v;
+      sum += pts[pts.length - 1].v / base; n++;
+    });
+    return n ? { v: sum / n * 100, n: n } : null;
+  }
+  function drawLine(box, vals) {
+    var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals); if (mx - mn < 1) { mx += 0.5; mn -= 0.5; }
+    var W = 320, H = 120, P = 14, xs = vals.length > 1 ? (W - 2 * P) / (vals.length - 1) : 0, NS = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("class", "wsvg"); svg.setAttribute("preserveAspectRatio", "none");
+    var coords = vals.map(function (v, i) { return [P + i * xs, H - P - (v - mn) / (mx - mn) * (H - 2 * P)]; });
+    var pl = document.createElementNS(NS, "polyline"); pl.setAttribute("points", coords.map(function (c) { return c[0] + "," + c[1]; }).join(" "));
+    pl.setAttribute("fill", "none"); pl.setAttribute("stroke", "currentColor"); pl.setAttribute("stroke-width", "2"); pl.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(pl); box.appendChild(svg);
+  }
+  function pct(v) { var d = Math.round((v - 100) * 10) / 10; return (d > 0 ? "+" : "") + fmtNum(d) + " %"; }
+  function renderIndex() {
+    var k = document.getElementById("ix-kpis"), ch = document.getElementById("ix-chart"), note = document.getElementById("ix-note");
+    k.textContent = ""; ch.textContent = ""; note.textContent = "";
+    var ser = strengthSeries(), today = "9999-12-31";
+    var all = indexAt(ser, today, null);
+    if (!all) { note.textContent = "Il faut au moins deux séances avec le même exercice (même salle pour les machines) pour calculer ton indice. Il se remplira tout seul."; return; }
+    var cells = [[all, "Global"], [indexAt(ser, today, "push"), "Push"], [indexAt(ser, today, "pull"), "Pull"], [indexAt(ser, today, "legs"), "Legs"]];
+    k.style.gridTemplateColumns = "repeat(4, minmax(0, 1fr))";
+    cells.forEach(function (c) {
+      var d = document.createElement("div"); d.className = "kpi";
+      var b = document.createElement("b"); b.textContent = c[0] ? fmtNum(Math.round(c[0].v * 10) / 10) : "-";
+      var sp = document.createElement("span"); sp.textContent = c[1] + (c[0] ? " (" + pct(c[0].v) + ")" : "");
+      d.appendChild(b); d.appendChild(sp); k.appendChild(d);
+    });
+    var dates = {}; Object.keys(ser).forEach(function (key) { ser[key].pts.forEach(function (x) { dates[x.d] = 1; }); });
+    var vals = Object.keys(dates).sort().map(function (d) { var r = indexAt(ser, d, null); return r ? r.v : null; }).filter(function (v) { return v !== null; }).slice(-24);
+    if (vals.length > 1) drawLine(ch, vals);
+    note.textContent = "100 = ta première séance de chaque exercice. Chaque exercice est comparé à lui-même (et à la même salle pour les machines), puis on fait la moyenne : changer de salle ne fausse rien. Calcul sur " + all.n + (all.n > 1 ? " exercices suivis." : " exercice suivi.");
+  }
   function renderSuivi() {
     var k = document.getElementById("kpis"); k.textContent = "";
     var dates = Object.keys(state.logs).filter(function (d) { return exCount(state.logs[d]) > 0; });
@@ -773,7 +835,7 @@ main.hastabs { padding-bottom: 84px; }
       var d = document.createElement("div"); d.className = "kpi"; var b = document.createElement("b"); b.textContent = x[0]; var sp = document.createElement("span"); sp.textContent = x[1];
       d.appendChild(b); d.appendChild(sp); k.appendChild(d);
     });
-    renderWeight(); renderForce();
+    renderIndex(); renderWeight(); renderForce();
   }
   var editingGym = null;
   function nameTaken(name, except) {
