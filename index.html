@@ -177,6 +177,14 @@ main { display: grid; gap: 12px; padding-top: 16px; }
 .fld i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted); pointer-events: none; }
 .btn.more { justify-self: start; }
 
+/* Suggestion de charge */
+.sg { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--field); }
+.sg.up { border-color: var(--ok); background: var(--ok-soft); }
+.sg .sgh { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.sg.up .sgh { color: var(--ok); }
+.sg .sgt { font-size: 14px; }
+.sg .btn { justify-self: start; }
+
 /* Chrono de séance */
 .chrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-top: 4px; }
 .chrow .chs { font-size: 12px; color: var(--muted); }
@@ -255,7 +263,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
         </div>
         <textarea id="b-text" placeholder="Pour importer : colle ici la sauvegarde copiée, puis appuie sur Importer." spellcheck="false"></textarea>
         <div class="msg" id="b-msg" role="status"></div>
-        <p>Version de l'application : 7 (chrono de séance, séries à volonté)</p>
+        <p>Version de l'application : 8 (suggestion de charge)</p>
       </section>
     </section>
 
@@ -589,6 +597,50 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     return n >= 3;
   }
 
+  // Suggestion de charge : double progression
+  function parseRange(scheme) {
+    var m = /x\s*(\d+)(?:\s*à\s*(\d+))?/.exec(scheme || "");
+    if (!m) return { lo: 8, hi: 12 };
+    var lo = parseInt(m[1], 10), hi = m[2] ? parseInt(m[2], 10) : lo;
+    return { lo: lo, hi: hi };
+  }
+  function stepFor(id) {
+    var ex = LIB[id];
+    if (id === "squat_barre" || id === "sdt_barre" || id === "sdt_roumain") return 5;
+    if (ex.equip === "Haltères") return 2;
+    return 2.5;
+  }
+  function lastLog(id) {
+    var dates = Object.keys(state.logs).filter(function (d) {
+      var a = state.logs[d] && state.logs[d].data && state.logs[d].data[id];
+      return d < state.date && a && a.some(function (s) { return s.kg !== null || s.reps !== null; });
+    }).sort().reverse();
+    return dates.length ? { date: dates[0], sets: state.logs[dates[0]].data[id].filter(function (s) { return s.kg !== null && s.reps !== null; }) } : null;
+  }
+  function suggestFor(id, slot) {
+    var last = lastLog(id);
+    if (!last || !last.sets.length) return null;
+    var rg = parseRange(slot.scheme), step = stepFor(id);
+    var W = 0;
+    last.sets.forEach(function (s) { if (s.kg > W) W = s.kg; });
+    var top = last.sets.filter(function (s) { return s.kg === W; });
+    var minReps = Math.min.apply(null, top.map(function (s) { return s.reps; }));
+    var wtxt = fmtNum(W) + " kg";
+    if (W === 0) {
+      var tg0 = Math.min(rg.hi, minReps + 1);
+      return { kg: null, up: false, text: "Poids du corps : vise " + tg0 + " répétitions sur chaque série, et ajoute du lest quand tu atteins " + rg.hi + " partout." };
+    }
+    if (top.length >= 3 && minReps >= rg.hi) {
+      var next = Math.round((W + step) * 100) / 100;
+      return { kg: next, up: true, text: "Tu as fait " + minReps + " répétitions ou plus sur " + top.length + " séries à " + wtxt + ". On monte : " + fmtNum(next) + " kg (+" + fmtNum(step) + "), et vise " + rg.lo + " à " + rg.hi + " répétitions." };
+    }
+    if (top.length < 3) {
+      return { kg: W, up: false, text: "Reste à " + wtxt + " et fais 3 séries complètes à cette charge avant de monter." };
+    }
+    var tg = Math.min(rg.hi, minReps + 1);
+    return { kg: W, up: false, text: "Reste à " + wtxt + " et vise " + tg + " répétitions sur chaque série. Tu montes quand les 3 séries atteignent " + rg.hi + "." };
+  }
+
   // Bandeau visuel
   function renderMap() {
     var bar = document.getElementById("mapbar");
@@ -712,11 +764,30 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     if (ex.ref) { var r = document.createElement("div"); r.className = "ref"; r.textContent = ex.ref; card.appendChild(r); }
     var pv = prevFor(id);
     if (pv) { var p = document.createElement("div"); p.className = "prev"; p.textContent = pv; card.appendChild(p); }
+    var sug = suggestFor(id, slot);
+    if (sug) {
+      var sg = document.createElement("div"); sg.className = "sg" + (sug.up ? " up" : "");
+      var sgh = document.createElement("div"); sgh.className = "sgh"; sgh.textContent = sug.up ? "Suggestion : monter la charge" : "Suggestion : garder la charge";
+      var sgt = document.createElement("div"); sgt.className = "sgt"; sgt.textContent = sug.text;
+      sg.appendChild(sgh); sg.appendChild(sgt);
+      if (sug.kg !== null) {
+        var use = document.createElement("button"); use.type = "button"; use.className = "btn"; use.textContent = "Mettre " + fmtNum(sug.kg) + " kg partout";
+        use.addEventListener("click", function () {
+          var arr = state.sheet[id];
+          for (var k = 0; k < arr.length; k++) {
+            if (arr[k].kg === null) { arr[k].kg = sug.kg; ins[k].kg.value = fmtNum(sug.kg); }
+          }
+          updPh(); refresh(); scheduleSave();
+        });
+        sg.appendChild(use);
+      }
+      card.appendChild(sg);
+    }
 
     var sets = document.createElement("div"); sets.className = "sets";
     var rows = [], ins = [];
     var MAXSETS = 12;
-    function basePh(field) { return field === "kg" ? (ex.plan !== null ? fmtNum(ex.plan) : "kg") : (slot.rp || "reps"); }
+    function basePh(field) { return field === "kg" ? (sug && sug.kg !== null ? fmtNum(sug.kg) : (ex.plan !== null ? fmtNum(ex.plan) : "kg")) : (slot.rp || "reps"); }
     // Les séries suivantes proposent la valeur de la série d'avant
     function updPh() {
       var arr = state.sheet[id];
