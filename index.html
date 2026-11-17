@@ -203,7 +203,10 @@ main { display: grid; gap: 12px; padding-top: 16px; }
 .empty { margin: 0; font-size: 13px; color: var(--muted); }
 .nform { display: grid; gap: 14px; }
 .nform .lb { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
-.nform input[type="date"] { width: 100%; min-height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 16px; }
+.nform > * { min-width: 0; }
+.nform input[type="date"] { -webkit-appearance: none; appearance: none; display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 16px; text-align: left; }
+.nform input[type="date"]::-webkit-date-and-time-value { text-align: left; min-width: 0; margin: 0; }
+.nform input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.7; }
 .nsum { font-size: 14px; }
 
 /* Sauvegarde */
