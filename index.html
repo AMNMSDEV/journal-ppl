@@ -632,7 +632,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     }
     if (top.length >= 3 && minReps >= rg.hi) {
       var next = Math.round((W + step) * 100) / 100;
-      return { kg: next, up: true, text: "Tu as fait " + minReps + " répétitions ou plus sur " + top.length + " séries à " + wtxt + ". On monte : " + fmtNum(next) + " kg (+" + fmtNum(step) + "), et vise " + rg.lo + " à " + rg.hi + " répétitions." };
+      return { kg: next, up: true, text: "Tu as fait " + minReps + " répétitions ou plus sur " + top.length + " séries à " + wtxt + ". On monte : " + fmtNum(next) + " kg (+" + fmtNum(step) + "), et vise " + (rg.lo === rg.hi ? rg.lo : rg.lo + " à " + rg.hi) + " répétitions." };
     }
     if (top.length < 3) {
       return { kg: W, up: false, text: "Reste à " + wtxt + " et fais 3 séries complètes à cette charge avant de monter." };
