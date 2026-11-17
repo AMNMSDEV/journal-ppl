@@ -200,6 +200,11 @@ main { display: grid; gap: 12px; padding-top: 16px; }
 .toast[hidden] { display: none; }
 .toast button { border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; min-height: 36px; }
 
+#v-home, #v-suivi, #v-params, #v-sess { grid-template-columns: minmax(0, 1fr); }
+.grow { flex-wrap: wrap; }
+.grow .gedit { flex: 1 1 140px; }
+.backup textarea { max-width: 100%; box-sizing: border-box; }
+
 /* Onglets */
 .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
 .tabs[hidden] { display: none; }
@@ -223,6 +228,7 @@ main.hastabs { padding-bottom: 84px; }
 .grow .gn { font-weight: 600; flex: 1; min-width: 0; }
 .gadd { display: flex; gap: 8px; }
 .gadd input { flex: 1; min-width: 0; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 16px; }
+.grow .gedit { flex: 1; min-width: 0; min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 16px; }
 .gymrow { display: flex; align-items: center; gap: 10px; }
 .gymrow label { font-size: 13px; color: var(--muted); flex: none; }
 .gymrow select { flex: 1; min-width: 0; min-height: 44px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 16px; }
@@ -328,6 +334,7 @@ main.hastabs { padding-bottom: 84px; }
         <input type="text" id="g-name" placeholder="Ajouter une salle" autocomplete="off" aria-label="Nom de la nouvelle salle">
         <button type="button" class="btn" id="g-add">Ajouter</button>
       </div>
+      <div class="msg" id="g-msg" role="status"></div>
       <section class="backup" aria-label="Sauvegarde des données">
         <h2>Sauvegarde</h2>
         <p>Tes séances sont stockées sur ce téléphone. Exporte-les de temps en temps : si tu changes de téléphone ou effaces les données de Safari, tu pourras les remettre avec Importer.</p>
@@ -338,7 +345,7 @@ main.hastabs { padding-bottom: 84px; }
         </div>
         <textarea id="b-text" placeholder="Pour importer : colle ici la sauvegarde copiée, puis appuie sur Importer." spellcheck="false"></textarea>
         <div class="msg" id="b-msg" role="status"></div>
-        <p>Version de l'application : 10 (modifier et supprimer)</p>
+        <p>Version de l'application : 10 (salles modifiables)</p>
       </section>
     </section>
 
@@ -768,20 +775,51 @@ main.hastabs { padding-bottom: 84px; }
     });
     renderWeight(); renderForce();
   }
+  var editingGym = null;
+  function nameTaken(name, except) {
+    var n = name.trim().toLowerCase();
+    return gyms.list.some(function (g) { return g.id !== except && g.name.trim().toLowerCase() === n; });
+  }
+  function renameGym(id, name) {
+    name = (name || "").trim();
+    if (!name || nameTaken(name, id)) return false;
+    gyms.list.forEach(function (g) { if (g.id === id) g.name = name; });
+    gymsSave();
+    return true;
+  }
   function renderGyms() {
     var box = document.getElementById("gyms");
     box.textContent = "";
+    var msg = document.getElementById("g-msg"); if (msg) msg.textContent = "";
     gyms.list.forEach(function (g) {
       var row = document.createElement("div"); row.className = "grow";
+      if (editingGym === g.id) {
+        var inp = document.createElement("input"); inp.type = "text"; inp.value = g.name; inp.className = "gedit"; inp.setAttribute("aria-label", "Nouveau nom de la salle"); inp.autocomplete = "off";
+        var save = document.createElement("button"); save.type = "button"; save.className = "btn"; save.textContent = "Enregistrer";
+        var cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "btn"; cancel.textContent = "Annuler";
+        function doSave() {
+          if (renameGym(g.id, inp.value)) { editingGym = null; renderGyms(); }
+          else { var m = document.getElementById("g-msg"); m.textContent = inp.value.trim() ? "Ce nom existe déjà." : "Le nom ne peut pas être vide."; }
+        }
+        save.addEventListener("click", doSave);
+        inp.addEventListener("keydown", function (e) { if (e.key === "Enter") doSave(); });
+        cancel.addEventListener("click", function () { editingGym = null; renderGyms(); });
+        row.appendChild(inp); row.appendChild(save); row.appendChild(cancel);
+        box.appendChild(row);
+        return;
+      }
       var nm = document.createElement("span"); nm.className = "gn"; nm.textContent = g.name;
       row.appendChild(nm);
       if (g.id === gyms.def) {
         var pl = document.createElement("span"); pl.className = "done-pill"; pl.textContent = "Par défaut"; row.appendChild(pl);
       } else {
-        var b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = "Mettre par défaut";
+        var b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = "Par défaut";
         b.addEventListener("click", function () { gyms.def = g.id; gymsSave(); renderGyms(); });
         row.appendChild(b);
       }
+      var ed = document.createElement("button"); ed.type = "button"; ed.className = "btn"; ed.textContent = "Renommer"; ed.setAttribute("aria-label", "Renommer la salle " + g.name);
+      ed.addEventListener("click", function () { editingGym = g.id; renderGyms(); var i2 = document.querySelector("#gyms .gedit"); if (i2) { i2.focus(); i2.select(); } });
+      row.appendChild(ed);
       box.appendChild(row);
     });
   }
@@ -1207,7 +1245,10 @@ main.hastabs { padding-bottom: 84px; }
   });
   document.getElementById("g-add").addEventListener("click", function () {
     var inp = document.getElementById("g-name");
-    if (addGym(inp.value)) { inp.value = ""; renderGyms(); }
+    var nm = inp.value.trim();
+    if (!nm) return;
+    if (nameTaken(nm, null)) { document.getElementById("g-msg").textContent = "Cette salle existe déjà."; return; }
+    if (addGym(nm)) { inp.value = ""; renderGyms(); }
   });
   document.getElementById("n-go").addEventListener("click", function () {
     var d = document.getElementById("n-date").value;
