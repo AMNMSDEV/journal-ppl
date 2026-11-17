@@ -177,6 +177,26 @@ main { display: grid; gap: 12px; padding-top: 16px; }
 .fld i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted); pointer-events: none; }
 .btn.more { justify-self: start; }
 
+/* Accueil */
+.tl { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.back { font: inherit; font-size: 14px; font-weight: 600; color: var(--accent); background: transparent; border: 0; padding: 6px 10px 6px 0; min-height: 40px; cursor: pointer; white-space: nowrap; }
+.cta { width: 100%; min-height: 58px; border: 0; border-radius: 14px; background: var(--accent); color: var(--accent-ink); font-family: var(--font-display); font-weight: 700; font-size: 18px; cursor: pointer; }
+.cta.sec2 { background: transparent; color: var(--accent); border: 1px solid var(--line); font-size: 15px; min-height: 48px; }
+.sug { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.sugt { font-size: 14px; }
+.sec { font-family: var(--font-display); font-size: 16px; margin: 10px 0 0; }
+.hist { display: grid; gap: 8px; }
+.hrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 58px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--fg); font: inherit; text-align: left; cursor: pointer; width: 100%; }
+.hrow .l { display: grid; min-width: 0; }
+.hrow .a { font-weight: 600; }
+.hrow .b { font-size: 12px; color: var(--muted); }
+.hrow .r { flex: none; font-size: 12px; color: var(--ok); font-weight: 600; }
+.empty { margin: 0; font-size: 13px; color: var(--muted); }
+.nform { display: grid; gap: 14px; }
+.nform .lb { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+.nform input[type="date"] { width: 100%; min-height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--fg); font: inherit; font-size: 16px; }
+.nsum { font-size: 14px; }
+
 /* Sauvegarde */
 .backup { margin-top: 28px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); display: grid; gap: 10px; }
 .backup h2 { font-family: var(--font-display); font-size: 16px; margin: 0; }
@@ -194,42 +214,66 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   <header class="top">
     <div class="topin">
       <div class="row1">
-        <h1>Journal Push Pull Legs</h1>
+        <div class="tl">
+          <button type="button" class="back" id="back" hidden>&#8249; Accueil</button>
+          <h1 id="ttl">Journal Push Pull Legs</h1>
+        </div>
         <span class="status" id="status"></span>
-      </div>
-      <div class="dates" id="dates" aria-label="Date de l'entraînement"></div>
-      <div class="pickrow" id="pickrow" hidden>
-        <label for="pick">Choisir une date</label>
-        <input type="date" id="pick">
       </div>
     </div>
   </header>
 
   <main>
-    <div class="hint" id="hint"></div>
-    <div class="seg" id="seg-day" role="tablist" aria-label="Séance">
-      <button type="button" role="tab" data-day="push">Push</button>
-      <button type="button" role="tab" data-day="pull">Pull</button>
-      <button type="button" role="tab" data-day="legs">Legs</button>
-    </div>
-    <div class="seg sub" id="seg-var" role="tablist" aria-label="Version">
-      <button type="button" role="tab" data-var="A">A</button>
-      <button type="button" role="tab" data-var="B">B</button>
-    </div>
-    <p class="warm" id="warm"></p>
-    <div class="mapbar" id="mapbar" aria-label="Muscles de la séance"></div>
-    <div class="exlist" id="ex"></div>
-    <section class="backup" aria-label="Sauvegarde des données">
-      <h2>Sauvegarde</h2>
-      <p>Tes séances sont stockées sur ce téléphone. Exporte-les de temps en temps : si tu changes de téléphone ou effaces les données de Safari, tu pourras les remettre avec Importer.</p>
-      <div class="bacts">
-        <button type="button" class="btn" id="b-copy">Copier la sauvegarde</button>
-        <button type="button" class="btn" id="b-share">Partager le fichier</button>
-        <button type="button" class="btn" id="b-imp">Importer</button>
+    <section id="v-home" style="display:grid;gap:12px">
+      <button type="button" class="cta" id="b-new">Créer une séance</button>
+      <div class="sug" id="sug"></div>
+      <h2 class="sec">Mes séances</h2>
+      <div class="hist" id="hist"></div>
+      <section class="backup" aria-label="Sauvegarde des données">
+        <h2>Sauvegarde</h2>
+        <p>Tes séances sont stockées sur ce téléphone. Exporte-les de temps en temps : si tu changes de téléphone ou effaces les données de Safari, tu pourras les remettre avec Importer.</p>
+        <div class="bacts">
+          <button type="button" class="btn" id="b-copy">Copier la sauvegarde</button>
+          <button type="button" class="btn" id="b-share">Partager le fichier</button>
+          <button type="button" class="btn" id="b-imp">Importer</button>
+        </div>
+        <textarea id="b-text" placeholder="Pour importer : colle ici la sauvegarde copiée, puis appuie sur Importer." spellcheck="false"></textarea>
+        <div class="msg" id="b-msg" role="status"></div>
+        <p>Version de l'application : 6 (accueil et création de séance)</p>
+      </section>
+    </section>
+
+    <section id="v-new" class="nform" hidden>
+      <div>
+        <span class="lb">Séance</span>
+        <div class="seg" id="n-day" role="tablist" aria-label="Séance">
+          <button type="button" role="tab" data-day="push">Push</button>
+          <button type="button" role="tab" data-day="pull">Pull</button>
+          <button type="button" role="tab" data-day="legs">Legs</button>
+        </div>
       </div>
-      <textarea id="b-text" placeholder="Pour importer : colle ici la sauvegarde copiée, puis appuie sur Importer." spellcheck="false"></textarea>
-      <div class="msg" id="b-msg" role="status"></div>
-      <p>Version de l'application : 5 (séances par muscle)</p>
+      <div>
+        <span class="lb">Version</span>
+        <div class="seg sub" id="n-var" role="tablist" aria-label="Version">
+          <button type="button" role="tab" data-var="A">A</button>
+          <button type="button" role="tab" data-var="B">B</button>
+        </div>
+      </div>
+      <div>
+        <label class="lb" for="n-date">Date</label>
+        <input type="date" id="n-date">
+      </div>
+      <div class="nsum" id="n-sum"></div>
+      <button type="button" class="cta" id="n-go">Commencer la séance</button>
+      <button type="button" class="cta sec2" id="n-cancel">Annuler</button>
+    </section>
+
+    <section id="v-sess" style="display:grid;gap:12px" hidden>
+      <div class="hint" id="hint"></div>
+      <p class="warm" id="warm"></p>
+      <div class="mapbar" id="mapbar" aria-label="Muscles de la séance"></div>
+      <div class="exlist" id="ex"></div>
+      <button type="button" class="cta" id="s-end">Terminer la séance</button>
     </section>
   </main>
 </div>
@@ -365,45 +409,82 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     saveTimer = setTimeout(function () { saveTimer = null; if (date === state.date) queueWrite(state.date, buildDoc()); }, 600);
   }
 
-  // Rendu : dates
-  var elDates = document.getElementById("dates");
+  // Vues : accueil, nouvelle séance, séance
   var elEx = document.getElementById("ex");
-  function dateList() {
-    var set = {};
-    Object.keys(state.logs).forEach(function (d) { set[d] = 1; });
-    set[todayStr()] = 1; set[state.date] = 1;
-    return Object.keys(set).sort().reverse();
+  var VIEWS = ["home", "new", "sess"];
+  var nsel = { day: "push", variant: "A" };
+  function showView(v) {
+    state.view = v;
+    VIEWS.forEach(function (n) { document.getElementById("v-" + n).hidden = n !== v; });
+    document.getElementById("back").hidden = v === "home";
+    document.getElementById("ttl").textContent = v === "home" ? "Journal Push Pull Legs" : (v === "new" ? "Nouvelle séance" : PROGRAM[state.day].label + " " + state.variant);
+    try { window.scrollTo(0, 0); } catch (e) {}
   }
-  function renderDates() {
-    elDates.textContent = "";
+  function exCount(doc) {
+    if (!doc || !doc.data) return 0;
+    return Object.keys(doc.data).filter(function (k) { return (doc.data[k] || []).some(function (s) { return s.kg !== null; }); }).length;
+  }
+  function renderDates() { if (state.view === "home") renderHome(); }
+  function renderHome() {
     var today = todayStr();
-    dateList().forEach(function (d) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "chip" + (d === state.date ? " sel" : "");
-      b.setAttribute("data-date", d);
-      var lab = sessionLabel(state.logs[d]);
-      var l1 = document.createElement("span"); l1.className = "d"; l1.textContent = d === today ? "Aujourd'hui" : chipLabel(d);
-      var l2 = document.createElement("span"); l2.className = "s";
-      if (lab) { b.classList.add("logged"); l2.textContent = lab; }
-      else { var st = suggestText(suggest(d)); l2.textContent = st ? "prévu : " + st : "à remplir"; }
-      b.appendChild(l1); b.appendChild(l2);
-      elDates.appendChild(b);
+    var sg = suggest(today);
+    var box = document.getElementById("sug");
+    box.textContent = "";
+    var t = document.createElement("div"); t.className = "sugt";
+    if (!sg || sg.rest) {
+      t.textContent = sg ? "Aujourd'hui : repos prévu par le cycle." : "Aucune séance prévue aujourd'hui.";
+      box.appendChild(t);
+    } else {
+      var cur = state.logs[today];
+      var again = cur && cur.last && cur.last.day === sg.day && cur.last.variant === sg.variant && (hasData(cur) || (cur.sel && Object.keys(cur.sel).length));
+      t.textContent = "Prévu aujourd'hui : " + PROGRAM[sg.day].label + " " + sg.variant + " (cycle " + sg.cycle + ")";
+      var go = document.createElement("button"); go.type = "button"; go.className = "btn";
+      go.textContent = (again ? "Reprendre " : "Commencer ") + PROGRAM[sg.day].label + " " + sg.variant;
+      go.addEventListener("click", function () { openSession(today, sg.day, sg.variant); });
+      box.appendChild(t); box.appendChild(go);
+    }
+    var hist = document.getElementById("hist");
+    hist.textContent = "";
+    var dates = Object.keys(state.logs).filter(function (d) {
+      var doc = state.logs[d];
+      return doc && (hasData(doc) || (doc.sel && Object.keys(doc.sel).length));
+    }).sort().reverse();
+    if (!dates.length) {
+      var em = document.createElement("p"); em.className = "empty"; em.textContent = "Aucune séance enregistrée pour l'instant. Appuie sur Créer une séance.";
+      hist.appendChild(em);
+    }
+    dates.forEach(function (d) {
+      var doc = state.logs[d];
+      var b = document.createElement("button"); b.type = "button"; b.className = "hrow";
+      var l = document.createElement("span"); l.className = "l";
+      var a = document.createElement("span"); a.className = "a"; a.textContent = longLabel(d);
+      var lab = doc.last && PROGRAM[doc.last.day] ? PROGRAM[doc.last.day].label + " " + doc.last.variant : "Séance";
+      var bb = document.createElement("span"); bb.className = "b"; bb.textContent = lab;
+      l.appendChild(a); l.appendChild(bb);
+      var n = exCount(doc);
+      var r = document.createElement("span"); r.className = "r"; r.textContent = n ? n + (n > 1 ? " exercices" : " exercice") : "commencée";
+      b.appendChild(l); b.appendChild(r);
+      b.addEventListener("click", function () {
+        if (doc.last && PROGRAM[doc.last.day]) openSession(d, doc.last.day, doc.last.variant);
+      });
+      hist.appendChild(b);
     });
-    var add = document.createElement("button");
-    add.type = "button"; add.className = "chip add"; add.setAttribute("data-other", "1");
-    var a1 = document.createElement("span"); a1.className = "d"; a1.textContent = "Autre date";
-    var a2 = document.createElement("span"); a2.className = "s"; a2.textContent = "calendrier";
-    add.appendChild(a1); add.appendChild(a2);
-    elDates.appendChild(add);
-    var sel = elDates.querySelector(".chip.sel");
-    if (sel && sel.scrollIntoView) { try { sel.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (e) {} }
   }
-  function renderToggles() {
-    var days = document.querySelectorAll("#seg-day button");
-    for (var i = 0; i < days.length; i++) days[i].setAttribute("aria-selected", days[i].getAttribute("data-day") === state.day ? "true" : "false");
-    var vs = document.querySelectorAll("#seg-var button");
-    for (var j = 0; j < vs.length; j++) vs[j].setAttribute("aria-selected", vs[j].getAttribute("data-var") === state.variant ? "true" : "false");
+  function renderNew() {
+    var days = document.querySelectorAll("#n-day button");
+    for (var i = 0; i < days.length; i++) days[i].setAttribute("aria-selected", days[i].getAttribute("data-day") === nsel.day ? "true" : "false");
+    var vs = document.querySelectorAll("#n-var button");
+    for (var j = 0; j < vs.length; j++) vs[j].setAttribute("aria-selected", vs[j].getAttribute("data-var") === nsel.variant ? "true" : "false");
+    var sg = suggest(document.getElementById("n-date").value || todayStr());
+    var sum = document.getElementById("n-sum");
+    sum.textContent = PROGRAM[nsel.day].label + " " + nsel.variant + " : " + PROGRAM[nsel.day][nsel.variant].slots.length + " muscles.";
+    if (sg && !sg.rest && (sg.day !== nsel.day || sg.variant !== nsel.variant)) sum.textContent += " Le cycle prévoit " + PROGRAM[sg.day].label + " " + sg.variant + " ce jour-là.";
+  }
+  function openNew() {
+    var sg = suggest(todayStr());
+    if (sg && !sg.rest) { nsel.day = sg.day; nsel.variant = sg.variant; }
+    document.getElementById("n-date").value = todayStr();
+    renderNew(); showView("new");
   }
   function renderHint() {
     var h = document.getElementById("hint");
@@ -412,6 +493,13 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     var sg = suggest(state.date);
     if (sg) h.appendChild(document.createTextNode(sg.rest ? " · prévu par le cycle : repos (cycle " + sg.cycle + ")" : " · prévu par le cycle : " + PROGRAM[sg.day].label + " " + sg.variant + " (cycle " + sg.cycle + ")"));
   }
+  function openSession(date, day, variant) {
+    flushNow();
+    state.date = date; state.day = day; state.variant = variant; openPick = null; showAll = {};
+    loadSheet();
+    renderHint(); renderExercises(); showView("sess");
+  }
+  function goHome() { flushNow(); openPick = null; renderHome(); showView("home"); }
 
   // Historique par exercice
   function prevFor(id) {
@@ -603,42 +691,25 @@ main { display: grid; gap: 12px; padding-top: 16px; }
     slots().forEach(function (slot, i) { elEx.appendChild(buildBlock(slot, i)); });
     renderMap();
   }
-  function renderAll() { renderDates(); renderToggles(); renderHint(); renderExercises(); }
+  function renderAll() { if (state.view === "sess") { renderHint(); renderExercises(); } else renderHome(); }
 
-  function selectDate(d) {
-    flushNow();
-    state.date = d; openPick = null; showAll = {};
-    loadSheet();
-    var doc = state.logs[d];
-    if (doc && doc.last && PROGRAM[doc.last.day]) { state.day = doc.last.day; state.variant = doc.last.variant; }
-    else { var sg = suggest(d); if (sg && !sg.rest) { state.day = sg.day; state.variant = sg.variant; } }
-    renderAll();
-  }
-
-  document.getElementById("dates").addEventListener("click", function (e) {
-    var o = e.target.closest ? e.target.closest("button[data-other]") : null;
-    if (o) {
-      var row = document.getElementById("pickrow");
-      row.hidden = !row.hidden;
-      if (!row.hidden) { var pk = document.getElementById("pick"); pk.value = state.date; try { pk.focus(); } catch (x) {} }
-      return;
-    }
-    var b = e.target.closest ? e.target.closest("button[data-date]") : null;
-    if (b) selectDate(b.getAttribute("data-date"));
-  });
-  document.getElementById("pick").addEventListener("change", function () {
-    var v = this.value;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) { document.getElementById("pickrow").hidden = true; selectDate(v); }
-  });
-  document.getElementById("seg-day").addEventListener("click", function (e) {
+  document.getElementById("b-new").addEventListener("click", openNew);
+  document.getElementById("back").addEventListener("click", goHome);
+  document.getElementById("s-end").addEventListener("click", goHome);
+  document.getElementById("n-cancel").addEventListener("click", goHome);
+  document.getElementById("n-day").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest("button[data-day]") : null;
-    if (!b) return;
-    flushNow(); state.day = b.getAttribute("data-day"); openPick = null; renderToggles(); renderExercises();
+    if (b) { nsel.day = b.getAttribute("data-day"); renderNew(); }
   });
-  document.getElementById("seg-var").addEventListener("click", function (e) {
+  document.getElementById("n-var").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest("button[data-var]") : null;
-    if (!b) return;
-    flushNow(); state.variant = b.getAttribute("data-var"); openPick = null; renderToggles(); renderExercises();
+    if (b) { nsel.variant = b.getAttribute("data-var"); renderNew(); }
+  });
+  document.getElementById("n-date").addEventListener("change", renderNew);
+  document.getElementById("n-go").addEventListener("click", function () {
+    var d = document.getElementById("n-date").value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) d = todayStr();
+    openSession(d, nsel.day, nsel.variant);
   });
   document.getElementById("mapbar").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest("button[data-slot]") : null;
@@ -688,7 +759,7 @@ main { display: grid; gap: 12px; padding-top: 16px; }
       if (!cur || (inc.updatedAt || 0) > (cur.updatedAt || 0)) { state.logs[d] = inc; n++; }
     });
     lsWrite(state.logs);
-    loadSheet(); renderAll();
+    renderAll();
     document.getElementById("b-text").value = "";
     msg(n + " jour(s) importé(s) ou mis à jour.");
   });
@@ -696,13 +767,10 @@ main { display: grid; gap: 12px; padding-top: 16px; }
   // Départ
   (function init() {
     state.logs = migrateAll(lsRead());
-    var sg = suggest(state.date);
-    if (sg && !sg.rest) { state.day = sg.day; state.variant = sg.variant; }
-    loadSheet();
-    var cur = state.logs[state.date];
-    if (cur && cur.last && PROGRAM[cur.last.day]) { state.day = cur.last.day; state.variant = cur.last.variant; }
     setStatus("Sur ce téléphone");
-    renderAll();
+    state.view = "home";
+    renderHome();
+    showView("home");
   })();
 })();
 </script>
